@@ -11,7 +11,7 @@ from typing import Any
 
 
 ROOT = Path(__file__).resolve().parents[1]
-NOTEBOOK_DIRS = [ROOT / "lectures", ROOT / "exercises"]
+NOTEBOOK_DIRS = [ROOT / "lectures"]
 BAD_CODE_PATTERNS = [
     re.compile(r"(?i)\bread_csv\(\s*[\"']https?://"),
     re.compile(r"(?i)\bread_excel\(\s*[\"']https?://"),

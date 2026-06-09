@@ -8,12 +8,12 @@ Dates, room, and institutional calendar details are still to be confirmed.
 
 Coding 2 continues from the first course in the programming sequence and moves into applied statistical learning workflows in Python. The course begins with linear regression and ends with regression trees, emphasizing reproducible data analysis, model interpretation, validation, and responsible use of large language models in analytic software production.
 
-Students work locally from this repository. Required notebooks, exercises, scripts, and synthetic teaching datasets live here so that the course can be run from a reproducible `uv` environment.
+Students work locally from this repository. Required notebooks, scripts, and synthetic teaching datasets live here so that the course can be run from a reproducible `uv` environment. Homework is delivered as separate per-lecture debugging repositories that students clone and fix.
 
 ## Repository Materials
 
 - `lectures/`: session folders from simple linear regression through regression trees.
-- `exercises/`: short 10-20 minute practice notebooks tied to the session plan.
+- Homework debugging repositories: one stand-alone, intentionally buggy repo per lecture (listed in `schedule/session_plan.md`) that students clone and correct.
 - `data/`: documentation and generated raw teaching datasets.
 - `scripts/fetch_data.py`: creates the local teaching datasets.
 - `scripts/check_no_pip.py`: checks that student-facing files use the course environment policy.
@@ -55,7 +55,7 @@ The course is organized as nine substantive sessions:
 8. Unsupervised learning with clustering and PCA.
 9. Regression trees.
 
-Each lecture directory contains a local README and a runnable notebook. Exercises are shorter companion notebooks for practice or homework.
+Each lecture directory contains a local README and a runnable notebook. Homework for each session is a separate debugging repository (see `schedule/session_plan.md`): a stand-alone analytic project that mirrors the lecture and ships with seeded bugs for students to find and fix.
 
 ## Learning Outcomes
 

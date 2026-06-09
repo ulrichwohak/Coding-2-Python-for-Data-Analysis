@@ -14,7 +14,6 @@ TARGETS = [
     ROOT / "NOTICE.md",
     ROOT / "data",
     ROOT / "lectures",
-    ROOT / "exercises",
     ROOT / "schedule",
 ]
 PATTERNS = [
