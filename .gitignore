@@ -10,3 +10,8 @@ CLAUDE.md
 
 data/raw/*
 !data/raw/.gitkeep
+
+# Local CEU AI credentials and file backups
+.ceu/
+.env
+.env.*
