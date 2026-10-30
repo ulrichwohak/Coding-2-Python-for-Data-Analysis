@@ -41,6 +41,41 @@ uv run python scripts/check_no_pip.py
 uv run python scripts/check_notebooks.py
 ```
 
+## CEU AI in the VS Code terminal
+
+Use the assistant for the class reconstruction activity after human-first coding, or when
+an assignment permits AI. From your local course folder, open a VS Code terminal and run:
+
+```bash
+uv run ceu.py
+```
+
+The first launch asks for the shared class client ID and secret supplied separately by the
+instructor, then lets you choose an available model. Setup is remembered locally; the
+secret is hidden while you enter it. Later launches go straight to the prompt.
+
+Type or paste a request and press Enter, for example:
+
+```text
+You> Create a Python file that prints the mean of 10, 20, and 30.
+Created analysis.py
+```
+
+Generated files are saved in the terminal's current folder and appear in VS Code. The tool
+shows a diff and asks before replacing existing files; originals are backed up locally.
+It does not execute generated code. Inspect, run, test, and explain the result yourself.
+
+Follow-up requests can revise files created in the current session. To share an existing
+text file, use `/add analysis.py` (its contents will be sent to CEU with the next request).
+Use `/new` for a new conversation, `/model` to change model, and `/quit` to exit. Pasted
+multiline requests are sent together when you press Enter.
+
+Credentials and backups stay in the Git-ignored `.ceu/` folder. The credentials file is
+not encrypted; anyone who can read it can recover the shared secret. Never put the class
+secret in a prompt, notebook, or tracked file. Run `uv run ceu.py --setup` to replace saved
+credentials. Conversation history is kept only for the current session. The class account
+shares CEU's configured request and spending limits.
+
 ## Course Structure
 
 The course is organized as nine substantive sessions:
