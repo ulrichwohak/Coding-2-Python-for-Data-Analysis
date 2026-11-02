@@ -1,7 +1,15 @@
-"""Generate deterministic local teaching datasets for Coding 2."""
+"""Download and prepare the local teaching datasets for Coding 2.
+
+The source files accompany Gabor Bekes and Gabor Kezdi's *Data Analysis for
+Business, Economics, and Policy*. Notebooks never access these URLs directly:
+this script verifies the source files and writes small, course-ready extracts.
+"""
 
 from __future__ import annotations
 
+import hashlib
+import urllib.request
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -10,143 +18,263 @@ import pandas as pd
 
 ROOT = Path(__file__).resolve().parents[1]
 RAW = ROOT / "data" / "raw"
+SOURCE = RAW / "source"
 
 
-def make_career_outcomes(rng: np.random.Generator) -> pd.DataFrame:
-    n = 240
-    sectors = np.array(["finance", "public", "retail", "technology"])
-    sector = rng.choice(sectors, size=n, p=[0.25, 0.2, 0.25, 0.3])
-    experience = rng.gamma(shape=3.0, scale=2.2, size=n).clip(0, 20)
-    education = rng.choice([12, 14, 16, 18], size=n, p=[0.12, 0.25, 0.45, 0.18])
-    training = rng.normal(38, 16, size=n).clip(0, 100)
-    remote = rng.binomial(1, np.where(sector == "technology", 0.62, 0.28))
-    ai_tool_use = rng.normal(3.0 + 0.08 * training + 0.7 * remote, 1.7, size=n).clip(0, 10)
+@dataclass(frozen=True)
+class SourceFile:
+    filename: str
+    url: str
+    sha256: str
 
-    sector_effect = {
-        "finance": 8.0,
-        "public": -4.0,
-        "retail": -7.0,
-        "technology": 9.5,
+
+SOURCES = {
+    "hotels_price": SourceFile(
+        "hotels_price.csv",
+        "https://osf.io/p6tyr/download",
+        "f86a8d6a1c525d3811acea1e43b00a6ffca7d76e296d739880022b5e80b6d765",
+    ),
+    "hotels_features": SourceFile(
+        "hotels_features.csv",
+        "https://osf.io/utwjs/download",
+        "4c8e13164556f70dbc00d4bf4ecc14651cb921cda929c6662cf291c963ec8e33",
+    ),
+    "share_health": SourceFile(
+        "share_health.csv",
+        "https://osf.io/3ze58/download",
+        "b33a92720449ed41bf1bd022595e4a1c8645dd0d31a3793f0c9bfe325f9014ab",
+    ),
+    "airbnb_london": SourceFile(
+        "airbnb_london.csv",
+        "https://osf.io/7n96w/download",
+        "661581d6ef8c2f19c00de0c39997f1b5825b983a8cef2fcd5b991396dbe8a3a1",
+    ),
+    "wms": SourceFile(
+        "wms.csv",
+        "https://osf.io/uzpce/download",
+        "736af40a69737d364f41461c315c61b0febaec5a896998ed66d1c362e339827f",
+    ),
+    "used_cars": SourceFile(
+        "used_cars.csv",
+        "https://osf.io/7gvz9/download",
+        "4db49a2ac9ea87e0cc6df95477d5f17a21ba94fd118f85e70d93befaaca0a819",
+    ),
+}
+
+
+def file_hash(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def download(source: SourceFile) -> Path:
+    path = SOURCE / source.filename
+    if path.exists() and file_hash(path) == source.sha256:
+        return path
+
+    request = urllib.request.Request(
+        source.url,
+        headers={"User-Agent": "Coding-2-CEU/2026 (teaching data fetch)"},
+    )
+    with urllib.request.urlopen(request, timeout=120) as response:
+        path.write_bytes(response.read())
+
+    actual = file_hash(path)
+    if actual != source.sha256:
+        path.unlink(missing_ok=True)
+        raise RuntimeError(
+            f"Checksum mismatch for {source.filename}: expected {source.sha256}, got {actual}"
+        )
+    return path
+
+
+def prepare_hotels(paths: dict[str, Path]) -> pd.DataFrame:
+    prices = pd.read_csv(paths["hotels_price"])
+    features = pd.read_csv(paths["hotels_features"])
+    hotels = prices.merge(features, on="hotel_id", validate="many_to_one")
+
+    required = ["price", "distance", "stars", "rating"]
+    keep = (
+        hotels["city_actual"].isin(["Amsterdam", "Barcelona", "Vienna"])
+        & hotels["accommodation_type"].isin(["Apartment", "Hotel"])
+        & hotels["year"].eq(2017)
+        & hotels["month"].eq(11)
+        & hotels["weekend"].eq(0)
+        & hotels["nnights"].eq(1)
+        & hotels["stars"].between(3, 4)
+        & hotels["price"].between(20, 600)
+        & hotels[required].notna().all(axis=1)
+    )
+    columns = [
+        "hotel_id",
+        "city_actual",
+        "accommodation_type",
+        "price",
+        "distance",
+        "stars",
+        "rating",
+        "rating_reviewcount",
+    ]
+    course = hotels.loc[keep, columns].rename(
+        columns={
+            "city_actual": "city",
+            "accommodation_type": "accommodation",
+            "distance": "distance_miles",
+            "rating_reviewcount": "review_count",
+        }
+    )
+    return course.assign(log_price=np.log(course["price"])).sort_values("hotel_id")
+
+
+def prepare_share_health(path: Path) -> pd.DataFrame:
+    share = pd.read_csv(path)
+    columns = [
+        "ID",
+        "country_str",
+        "stayshealthy",
+        "smoking",
+        "ever_smoked",
+        "female",
+        "age",
+        "income10",
+        "eduyears",
+        "bmi",
+        "exerc",
+    ]
+    course = share[columns].dropna().rename(
+        columns={"ID": "person_id", "country_str": "country"}
+    )
+    integer_columns = [
+        "person_id",
+        "stayshealthy",
+        "smoking",
+        "ever_smoked",
+        "female",
+        "income10",
+        "exerc",
+    ]
+    course[integer_columns] = course[integer_columns].astype(int)
+    return course.reset_index(drop=True)
+
+
+def prepare_airbnb(path: Path) -> pd.DataFrame:
+    airbnb = pd.read_csv(path, low_memory=False)
+    airbnb["price_eur"] = (
+        airbnb["price"].astype(str).str.replace(r"[$,]", "", regex=True).astype(float)
+    )
+    airbnb = airbnb.loc[
+        airbnb["neighbourhood_cleansed"].eq("Hackney")
+        & airbnb["price_eur"].between(20, 400)
+        & airbnb["accommodates"].between(1, 8)
+    ].copy()
+
+    columns = {
+        "id": "listing_id",
+        "price_eur": "price_eur",
+        "accommodates": "accommodates",
+        "bedrooms": "bedrooms",
+        "bathrooms": "bathrooms",
+        "minimum_nights": "minimum_nights",
+        "number_of_reviews": "number_of_reviews",
+        "review_scores_rating": "review_score",
+        "room_type": "room_type",
+        "property_type": "property_type",
+        "host_is_superhost": "superhost",
+        "instant_bookable": "instant_bookable",
+        "Kitchen": "kitchen",
+        "Wireless Internet": "wifi",
+        "Elevator in building": "elevator",
     }
-    salary = (
-        29
-        + 2.7 * experience
-        + 2.2 * (education - 12)
-        + 0.22 * training
-        + 1.5 * ai_tool_use
-        + np.array([sector_effect[s] for s in sector])
-        + rng.normal(0, 7.5, size=n)
-    )
+    course = airbnb[list(columns)].rename(columns=columns)
+    course = course.dropna(subset=["listing_id", "price_eur", "room_type", "property_type"])
+    course["listing_id"] = course["listing_id"].astype(int)
+    if len(course) > 3000:
+        course = course.sample(3000, random_state=42)
+    return course.sort_values("listing_id").reset_index(drop=True)
 
-    promotion_score = (
-        -4.3
-        + 0.22 * experience
-        + 0.045 * training
-        + 0.32 * ai_tool_use
-        + 0.55 * remote
-        + np.where(sector == "technology", 0.35, 0.0)
-    )
-    promotion_probability = 1 / (1 + np.exp(-promotion_score))
-    promoted = rng.binomial(1, promotion_probability)
 
-    return pd.DataFrame(
-        {
-            "experience_years": experience.round(1),
-            "education_years": education,
-            "training_hours": training.round(1),
-            "sector": sector,
-            "remote": remote,
-            "ai_tool_use": ai_tool_use.round(1),
-            "salary_k_eur": salary.round(1),
-            "promoted": promoted,
+def prepare_wms(path: Path) -> pd.DataFrame:
+    wms = pd.read_csv(path, low_memory=False)
+    columns = [
+        "firmid",
+        "wave",
+        "country",
+        "operations",
+        "monitor",
+        "target",
+        "people",
+        "management",
+        "emp_firm",
+    ]
+    course = wms[columns].dropna().rename(
+        columns={
+            "firmid": "firm_id",
+            "wave": "year",
+            "emp_firm": "employees",
         }
     )
+    course = course.loc[course["employees"].between(10, 10_000)].copy()
+    if len(course) > 2000:
+        course = course.sample(2000, random_state=42)
+    return course.sort_values(["firm_id", "year"]).reset_index(drop=True)
 
 
-def make_housing_sales(rng: np.random.Generator) -> pd.DataFrame:
-    n = 360
-    district = rng.choice(["central", "inner_ring", "outer_ring", "suburban"], size=n, p=[0.18, 0.34, 0.3, 0.18])
-    size = rng.normal(78, 25, size=n).clip(28, 180)
-    rooms = np.maximum(1, np.round(size / rng.normal(28, 5, size=n))).astype(int).clip(1, 7)
-    age = rng.gamma(3.0, 14.0, size=n).clip(0, 120)
-    transit = rng.binomial(1, np.where(np.isin(district, ["central", "inner_ring"]), 0.72, 0.38))
-    renovation = rng.normal(5.5 - 0.025 * age + 1.0 * transit, 1.8, size=n).clip(0, 10)
-    district_effect = {
-        "central": 120,
-        "inner_ring": 65,
-        "outer_ring": 18,
-        "suburban": -8,
-    }
-    price = (
-        55
-        + 4.0 * size
-        + 11 * rooms
-        - 1.0 * age
-        + 22 * transit
-        + 13 * renovation
-        + 0.014 * size**2
-        + np.array([district_effect[d] for d in district])
-        + rng.normal(0, 42, size=n)
+def prepare_used_cars(path: Path) -> pd.DataFrame:
+    cars = pd.read_csv(path)
+    keep = (
+        cars["Hybrid"].eq(0)
+        & cars["fuel"].eq("gas")
+        & ~cars["condition"].isin(["new", "fair"])
+        & cars["price"].between(500, 25_000)
+        & cars["odometer"].le(100)
+        & ~(
+            cars["price"].lt(1000)
+            & (cars["condition"].eq("like new") | cars["age"].lt(8))
+        )
+        & cars["transmission"].ne("manual")
+        & ~cars["type"].isin(["truck", "pickup"])
     )
-
-    return pd.DataFrame(
-        {
-            "size_sq_m": size.round(1),
-            "rooms": rooms,
-            "age_years": age.round(1),
-            "district": district,
-            "near_transit": transit,
-            "renovation_score": renovation.round(1),
-            "price_k_eur": price.round(1),
-        }
+    course = cars.loc[keep].copy()
+    course["trim"] = np.select(
+        [course["LE"].eq(1), course["XLE"].eq(1), course["SE"].eq(1)],
+        ["LE", "XLE", "SE"],
+        default="base",
     )
+    course = course[
+        [
+            "price",
+            "age",
+            "odometer",
+            "condition",
+            "cylinders",
+            "drive",
+            "dealer",
+            "area",
+            "trim",
+        ]
+    ].rename(columns={"odometer": "odometer_10k_miles"})
+    categorical = ["condition", "cylinders", "drive", "area", "trim"]
+    course[categorical] = course[categorical].fillna("unknown")
+    return course.reset_index(drop=True)
 
 
-def make_campaign_response(rng: np.random.Generator) -> pd.DataFrame:
-    n = 320
-    segment = rng.choice(["budget", "loyal", "occasional", "premium"], size=n, p=[0.24, 0.28, 0.32, 0.16])
-    age = rng.normal(39, 11, size=n).clip(18, 72)
-    visits = rng.poisson(np.where(segment == "loyal", 7, np.where(segment == "premium", 5, 3)), size=n)
-    emails_opened = rng.binomial(8, np.where(segment == "loyal", 0.58, np.where(segment == "budget", 0.34, 0.43)), size=n)
-    discount = rng.choice([0, 5, 10, 15, 20, 25], size=n, p=[0.12, 0.14, 0.24, 0.22, 0.18, 0.10])
-    prior_spend = rng.gamma(shape=2.0, scale=np.where(segment == "premium", 95, 48), size=n)
-    logit = (
-        -3.0
-        + 0.18 * visits
-        + 0.28 * emails_opened
-        + 0.055 * discount
-        + 0.004 * prior_spend
-        + np.where(segment == "loyal", 0.7, 0)
-        + np.where(segment == "budget", -0.35, 0)
-    )
-    response_probability = 1 / (1 + np.exp(-logit))
-    responded = rng.binomial(1, response_probability)
-
-    return pd.DataFrame(
-        {
-            "age": age.round(0).astype(int),
-            "visits_last_month": visits,
-            "emails_opened": emails_opened,
-            "discount_pct": discount,
-            "prior_spend_eur": prior_spend.round(2),
-            "segment": segment,
-            "responded": responded,
-        }
-    )
+def write_dataset(name: str, frame: pd.DataFrame) -> None:
+    path = RAW / name
+    frame.to_csv(path, index=False)
+    print(f"wrote {path.relative_to(ROOT)} ({len(frame)} rows, {len(frame.columns)} columns)")
 
 
 def main() -> None:
-    RAW.mkdir(parents=True, exist_ok=True)
-    rng = np.random.default_rng(20260209)
-    datasets = {
-        "career_outcomes.csv": make_career_outcomes(rng),
-        "housing_sales.csv": make_housing_sales(rng),
-        "campaign_response.csv": make_campaign_response(rng),
-    }
-    for name, frame in datasets.items():
-        path = RAW / name
-        frame.to_csv(path, index=False)
-        print(f"wrote {path.relative_to(ROOT)} ({len(frame)} rows)")
+    SOURCE.mkdir(parents=True, exist_ok=True)
+    paths = {name: download(source) for name, source in SOURCES.items()}
+    write_dataset("hotels_course.csv", prepare_hotels(paths))
+    write_dataset("share_health_course.csv", prepare_share_health(paths["share_health"]))
+    write_dataset("airbnb_hackney_course.csv", prepare_airbnb(paths["airbnb_london"]))
+    write_dataset("wms_course.csv", prepare_wms(paths["wms"]))
+    write_dataset("used_cars_course.csv", prepare_used_cars(paths["used_cars"]))
 
 
 if __name__ == "__main__":

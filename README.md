@@ -1,45 +1,40 @@
 # Coding 2: Python for Data Analysis
 
-Course materials and environment for **Coding 2: Python for Data Analysis** in the MSc Business Analytics Program at CEU.
+Course materials and environment for **Coding 2: Python for Data Analysis** in the MSc
+Business Analytics Program at CEU.
 
-Dates, room, and institutional calendar details are still to be confirmed.
+The course meets on Mondays from 15:40 to 17:20, 2 November–7 December 2026. The room is
+still to be confirmed.
 
-## Course Overview
+## Course overview
 
-Coding 2 continues from the first course in the programming sequence and moves into applied statistical learning workflows in Python. The course begins with linear regression and ends with regression trees, emphasizing reproducible data analysis, model interpretation, validation, and responsible use of large language models in analytic software production.
+Coding 2 continues from the first course in the programming sequence and develops applied
+statistical-learning workflows in Python. The course moves from regression to probability
+models, honest validation, regularization, unsupervised learning, and regression trees.
+Students learn to connect an analytic question to code, evidence, model limitations, and a
+reproducible decision process.
 
-Students work locally from this repository. Required notebooks, scripts, and synthetic teaching datasets live here so that the course can be run from a reproducible `uv` environment. Homework is delivered as separate per-lecture debugging repositories that students clone and fix.
+The central classroom method is **human-first live coding**. Students build each notebook
+with the instructor before an LLM is introduced. At the end of each scheduled meeting, the
+students each develop their own prompt asking an LLM to reconstruct the completed
+workflow. They audit the generated responses against the human-built notebook for
+vocabulary, ordering, implementation, numerical results, and analytic correctness.
 
-## Repository Materials
-
-- `lectures/`: session folders from simple linear regression through regression trees.
-- Homework debugging repositories: one stand-alone, intentionally buggy repo per lecture (listed in `schedule/session_plan.md`) that students clone and correct.
-- `data/`: documentation and generated raw teaching datasets.
-- `scripts/fetch_data.py`: creates the local teaching datasets.
-- `scripts/check_no_pip.py`: checks that student-facing files use the course environment policy.
-- `scripts/check_notebooks.py`: validates notebook JSON, metadata, syntax, and data-reference conventions.
-- `schedule/session_plan.md`: ordered session plan with placeholders for unconfirmed dates.
+LLM use continues through the separate debugging homeworks. Students may use an
+LLM to propose diagnoses and fixes, but they remain responsible for executing, testing,
+interpreting, and explaining every change.
 
 ## Setup
 
-Install `uv`, clone this repository, then run:
+Install `uv`, clone this repository, and run:
 
 ```bash
-uv sync
-uv run python scripts/fetch_data.py
-```
-
-Open the notebooks from the repository root after syncing the environment and generating data.
-
-For local validation, run:
-
-```bash
-uv lock --check
 uv sync --locked
 uv run python scripts/fetch_data.py
-uv run python scripts/check_no_pip.py
-uv run python scripts/check_notebooks.py
+uv run jupyter lab
 ```
+
+Open notebooks from the repository root so their local data paths resolve correctly.
 
 ## CEU AI in the VS Code terminal
 
@@ -57,7 +52,7 @@ secret is hidden while you enter it. Later launches go straight to the prompt.
 Type or paste a request and press Enter, for example:
 
 ```text
-You> Create a Python file that prints the mean of 10, 20, and 30.
+You> Create a Python file that reads data/raw/hotels_course.csv and prints its column names.
 Created analysis.py
 ```
 
@@ -70,50 +65,107 @@ text file, use `/add analysis.py` (its contents will be sent to CEU with the nex
 Use `/new` for a new conversation, `/model` to change model, and `/quit` to exit. Pasted
 multiline requests are sent together when you press Enter.
 
-Credentials and backups stay in the Git-ignored `.ceu/` folder. The credentials file is
-not encrypted; anyone who can read it can recover the shared secret. Never put the class
-secret in a prompt, notebook, or tracked file. Run `uv run ceu.py --setup` to replace saved
-credentials. Conversation history is kept only for the current session. The class account
+Credentials and backups stay in the Git-ignored `.ceu/` folder. Never put the class secret
+in a prompt, notebook, or tracked file. Run `uv run ceu.py --setup` to replace saved
+credentials. The credentials file is not encrypted; anyone who can read it can recover the
+shared secret. Conversation history is kept only for the current session. The class account
 shares CEU's configured request and spending limits.
 
-## Course Structure
+## Repository materials
 
-The course is organized as nine substantive sessions:
+- `modules/`: nine substantive topic modules, grouped into six meetings, plus the course introduction.
+- [Course introduction](modules/module00-intro/): slides in PDF and editable PowerPoint formats.
+- `prompts/`: six human-first reconstruction and audit worksheets.
+- `data/README.md`: dataset sources, extract definitions, and preparation decisions.
+- `scripts/fetch_data.py`: downloads verified source files and creates local course extracts.
+- `scripts/build_notebooks.py`: reproducibly builds the module notebooks from reviewable cells.
+- `scripts/execute_notebooks.py`: executes each module in a fresh kernel without modifying sources.
+- `scripts/check_no_pip.py`: enforces the course environment policy in student-facing files.
+- `scripts/check_notebooks.py`: validates notebook JSON, metadata, syntax, outputs, and data references.
+- `schedule/session_plan.md`: dates, pacing, reconstruction prompts, and debugging homeworks.
+- `Coding-2-Python-for-Data-Analysis-Syllabus.md`: full course syllabus.
 
-1. Simple linear regression.
-2. Multiple regression and workflow design.
-3. Categorical variables and interactions.
-4. Diagnostics, residuals, and transformations.
-5. Logistic regression for classification.
-6. Train/test validation and resampling.
-7. Regularization and feature pipelines.
-8. Unsupervised learning with clustering and PCA.
-9. Regression trees.
+## Six-session structure
 
-Each lecture directory contains a local README and a runnable notebook. Homework for each session is a separate debugging repository (see `schedule/session_plan.md`): a stand-alone analytic project that mirrors the lecture and ships with seeded bugs for students to find and fix.
+Sessions are scheduled class meetings. Modules are topic units: one meeting can cover
+several modules, and a module can continue into a later meeting. The plan below shows the
+intended grouping. See the [dated session plan](schedule/session_plan.md) for module links
+and homework information.
 
-## Learning Outcomes
+1. Course introduction and simple linear regression using the European hotels case.
+2. Continue multiple regression, categorical variables, interactions, diagnostics, and transformations using the same case.
+3. Logistic regression, probability evaluation, and classification using SHARE health data.
+4. Validation, pipelines, Ridge, and LASSO using Airbnb listings in Hackney.
+5. PCA and clustering using the World Management Survey.
+6. Regression trees and course synthesis using used-car prices.
+
+Each 100-minute meeting combines live coding, individual LLM reconstruction, and discussion
+of the comparison. Pacing depends on progress through the modules. Optional notebook
+extensions provide additional depth when the live coding moves quickly.
+
+## Assessment
+
+- **Debugging homeworks: 40%.** Six homeworks, one per session, equally weighted within this component.
+- **Final exam: 60%.** Written, closed-book, and without a computer. The registrar will announce the slot.
+- **Passing threshold: 50/100 overall.**
+
+Assignment releases specify deadlines and submission instructions. The
+[syllabus](Coding-2-Python-for-Data-Analysis-Syllabus.md) contains the full assessment policy.
+
+## Learning outcomes
 
 By the end of the course, students should be able to:
 
-- Build and interpret regression, classification, clustering, and tree-based models in Python.
-- Design reproducible data-analysis workflows with local data files and clear environment management.
-- Evaluate models with appropriate diagnostics and validation strategies.
-- Translate analytic questions into modeling plans before writing code.
-- Use LLMs responsibly for project scoping, implementation planning, and debugging while independently checking correctness.
+- build and interpret regression, probability, regularization, clustering, PCA, and tree workflows;
+- translate a substantive question into an ordered, reproducible analysis specification;
+- evaluate models with appropriate diagnostics, cross-validation, and untouched holdout data;
+- place learned preprocessing inside resampling workflows and detect data leakage;
+- distinguish probability prediction from classification and justify a decision threshold;
+- communicate coefficients, predictions, uncertainty, residuals, and limitations with correct units;
+- compare hand-built and LLM-generated workflows without treating unfamiliar terminology as authority;
+- use LLMs for reconstruction and debugging while independently testing every claim.
 
-## AI And LLM Policy
+## AI and LLM policy
 
-Coding 2 explicitly teaches responsible use of LLMs in analytic software production. Students will practice using LLMs to scope projects, compare implementation plans, review model assumptions, and debug intentionally flawed codebases. LLM outputs must be treated as stochastic drafts that require revision, testing, and independent judgment.
+Module analysis is completed by hand with the instructor before any LLM reconstruction.
+Each student's prompt functions as an analytic specification: it records the question,
+data, required steps, outputs, constraints, and checks. Generated responses are stochastic
+comparison objects and are not canonical course solutions.
 
-This policy applies to Coding 2. It does not change Coding 1: Coding 1 itself will not use AI tools or LLMs for student course work.
+LLMs may be used in the debugging homeworks unless an assignment says otherwise. Students
+must be able to explain every submitted line and conclusion. LLMs and other AI-enabled
+writing or coding tools are not permitted during the closed-book final exam.
 
-## Attribution And Licensing
+This policy applies to Coding 2. Coding 1 remains a separate course in which students do not
+use AI tools or LLMs for coursework.
 
-The repository is distributed under the MIT License in `LICENSE`.
+## Validation
 
-Attribution details for repository materials are recorded in `NOTICE.md`. Required student materials are stored locally in this repository.
+Run the CI-equivalent checks with:
+
+```bash
+uv lock --check
+uv sync --locked
+uv run python scripts/fetch_data.py
+uv run python scripts/check_no_pip.py
+uv run python scripts/check_notebooks.py
+```
+
+To execute every notebook from a fresh kernel without changing the committed files:
+
+```bash
+uv run python scripts/execute_notebooks.py
+```
+
+## Attribution and licensing
+
+The repository is distributed under the MIT License. The case progression and substantial
+parts of the analytic structure are adapted from the MIT-licensed Gábor Békés and Gábor
+Kézdi Python and textbook case-study repositories. See `NOTICE.md` for pinned revisions,
+dataset handling, and detailed attribution.
 
 ## AI Attribution
 
-This repository was created and developed with assistance from OpenAI language models. The attribution describes the creation process for the repository materials; it is not a statement about student use of AI tools in Coding 1.
+This repository was created and developed with assistance from OpenAI language models. The
+statement documents the creation process for the repository materials; it does not replace
+the human-first Coding 2 policy above or alter Coding 1's prohibition on student AI use.
