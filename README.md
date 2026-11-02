@@ -34,7 +34,10 @@ uv run python scripts/fetch_data.py
 uv run jupyter lab
 ```
 
-Open notebooks from the repository root so their local data paths resolve correctly.
+Open a module notebook in VS Code or JupyterLab and run its setup cells first. The setup
+finds the project folder and sets `data_dir`, so loading data works from either the project
+root or the notebook's own folder. A terminal and a notebook kernel can have different
+working folders.
 
 ## CEU AI in the VS Code terminal
 
@@ -149,12 +152,16 @@ uv sync --locked
 uv run python scripts/fetch_data.py
 uv run python scripts/check_no_pip.py
 uv run python scripts/check_notebooks.py
+uv run python scripts/execute_notebooks.py
+uv run python scripts/test_ceu.py
 ```
 
-To execute every notebook from a fresh kernel without changing the committed files:
+The execution check starts each fresh kernel in the notebook's own folder, matching a
+normal notebook launch, without changing the committed files. To also check execution
+from the project root:
 
 ```bash
-uv run python scripts/execute_notebooks.py
+uv run python scripts/execute_notebooks.py --working-directory project
 ```
 
 ## Attribution and licensing

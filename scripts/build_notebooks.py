@@ -19,7 +19,34 @@ def code(text: str):
     return nbf.v4.new_code_cell(dedent(text).strip())
 
 
+def data_setup_cells() -> list:
+    return [
+        md(
+            """
+            **Project data folder.** This setup finds the course folder whether the
+            notebook starts in the project root or inside a module. `data_dir` points
+            to the local files prepared by `scripts/fetch_data.py`.
+            """
+        ),
+        code(
+            """
+            from pathlib import Path
+
+            project_root = Path.cwd()  # Start in the notebook's current working folder.
+            while not (project_root / "scripts" / "fetch_data.py").is_file():
+                if project_root == project_root.parent:
+                    raise FileNotFoundError("Open this notebook inside the Coding 2 repository.")
+                project_root = project_root.parent  # Look one folder higher.
+
+            data_dir = project_root / "data" / "raw"
+            """
+        ),
+    ]
+
+
 def write_notebook(relative_path: str, cells: list) -> None:
+    first_code = next(i for i, cell in enumerate(cells) if cell.cell_type == "code")
+    cells = cells[: first_code + 1] + data_setup_cells() + cells[first_code + 1 :]
     notebook = nbf.v4.new_notebook(
         cells=cells,
         metadata={
@@ -76,7 +103,7 @@ def module12() -> list:
         ),
         code(
             """
-            hotels = pd.read_csv("data/raw/hotels_course.csv")
+            hotels = pd.read_csv(data_dir / "hotels_course.csv")
             vienna = hotels.query("city == 'Vienna' and accommodation == 'Hotel'").copy()
             vienna.shape
             """
@@ -253,7 +280,7 @@ def module13() -> list:
         ),
         code(
             """
-            hotels = pd.read_csv("data/raw/hotels_course.csv")
+            hotels = pd.read_csv(data_dir / "hotels_course.csv")
             vienna = hotels.query("city == 'Vienna' and accommodation == 'Hotel'").copy()
             vienna[["price", "distance_miles", "rating", "stars", "review_count"]].describe().round(2)
             """
@@ -428,7 +455,7 @@ def module14() -> list:
         ),
         code(
             """
-            hotels = pd.read_csv("data/raw/hotels_course.csv")
+            hotels = pd.read_csv(data_dir / "hotels_course.csv")
             hotels.groupby(["city", "accommodation"]).size().unstack(fill_value=0)
             """
         ),
@@ -576,7 +603,7 @@ def module15() -> list:
         ),
         code(
             """
-            hotels = pd.read_csv("data/raw/hotels_course.csv")
+            hotels = pd.read_csv(data_dir / "hotels_course.csv")
             vienna = hotels.query("city == 'Vienna' and accommodation == 'Hotel'").copy()
             linear = smf.ols("log_price ~ distance_miles + rating + C(stars)", data=vienna).fit()
             """
@@ -743,7 +770,7 @@ def module16() -> list:
         ),
         code(
             """
-            share = pd.read_csv("data/raw/share_health_course.csv")
+            share = pd.read_csv(data_dir / "share_health_course.csv")
             variables = ["stayshealthy", "smoking", "ever_smoked", "female", "age", "income10", "eduyears", "bmi", "exerc"]
             share[variables].describe().T.round(2)
             """
@@ -915,7 +942,7 @@ def airbnb_setup_cells() -> list:
     return [
         code(
             """
-            airbnb = pd.read_csv("data/raw/airbnb_hackney_course.csv")
+            airbnb = pd.read_csv(data_dir / "airbnb_hackney_course.csv")
             target = "price_eur"
             numeric = ["accommodates", "bedrooms", "bathrooms", "minimum_nights", "number_of_reviews", "review_score"]
             categorical = ["room_type", "property_type", "superhost", "instant_bookable", "kitchen", "wifi", "elevator"]
@@ -1302,7 +1329,7 @@ def module19() -> list:
         ),
         code(
             """
-            wms = pd.read_csv("data/raw/wms_course.csv")
+            wms = pd.read_csv(data_dir / "wms_course.csv")
             practices = ["operations", "monitor", "target", "people"]
             wms[practices + ["management", "employees"]].describe().T.round(2)
             """
@@ -1464,7 +1491,7 @@ def module20() -> list:
         ),
         code(
             """
-            cars = pd.read_csv("data/raw/used_cars_course.csv")
+            cars = pd.read_csv(data_dir / "used_cars_course.csv")
             cars[["price", "age", "odometer_10k_miles"]].describe().T.round(1)
             """
         ),
