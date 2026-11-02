@@ -1,32 +1,46 @@
-# Session Plan
+# Coding 2 Session Plan
 
-Course dates and calendar exceptions are placeholders until the institutional calendar is confirmed.
+Coding 2 meets on Mondays from **15:40 to 17:20**, from **2 November to 7 December 2026**.
+There are six scheduled 100-minute meetings. The room remains to be confirmed.
 
-Meeting pattern: `MEETING_PATTERN_TBD`  
-Reading week: `READING_WEEK_TBD`
+Sessions are class meetings. Modules 12–20 are nine topic units: one meeting can cover
+several modules, and a module may continue into a later meeting. The grouping below is a
+teaching plan that can adapt to class progress.
 
-| Session | Date | Topic | Lecture | Homework (debugging repo) |
+## Schedule
+
+| Session | Date | Live coding and discussion | Reconstruction worksheet | Homework |
 | --- | --- | --- | --- | --- |
-| 12 | `SESSION_12_DATE_TBD` | Simple linear regression | `lectures/lecture12-simple-linear-regression/` | [coding2-debug-12-simple-linear-regression](https://github.com/ulrichwohak/coding2-debug-12-simple-linear-regression) |
-| 13 | `SESSION_13_DATE_TBD` | Multiple regression and workflow design | `lectures/lecture13-multiple-regression-workflow/` | [coding2-debug-13-multiple-regression-workflow](https://github.com/ulrichwohak/coding2-debug-13-multiple-regression-workflow) |
-| 14 | `SESSION_14_DATE_TBD` | Categorical variables and interactions | `lectures/lecture14-categorical-variables-interactions/` | [coding2-debug-14-categorical-variables-interactions](https://github.com/ulrichwohak/coding2-debug-14-categorical-variables-interactions) |
-| 15 | `SESSION_15_DATE_TBD` | Diagnostics, residuals, and transformations | `lectures/lecture15-diagnostics-transformations/` | [coding2-debug-15-diagnostics-transformations](https://github.com/ulrichwohak/coding2-debug-15-diagnostics-transformations) |
-| 16 | `SESSION_16_DATE_TBD` | Logistic regression | `lectures/lecture16-logistic-regression/` | [coding2-debug-16-logistic-regression](https://github.com/ulrichwohak/coding2-debug-16-logistic-regression) |
-| 17 | `SESSION_17_DATE_TBD` | Train/test validation and resampling | `lectures/lecture17-validation-resampling/` | [coding2-debug-17-validation-resampling](https://github.com/ulrichwohak/coding2-debug-17-validation-resampling) |
-| 18 | `SESSION_18_DATE_TBD` | Regularization and feature pipelines | `lectures/lecture18-regularization-pipelines/` | [coding2-debug-18-regularization-pipelines](https://github.com/ulrichwohak/coding2-debug-18-regularization-pipelines) |
-| 19 | `SESSION_19_DATE_TBD` | Unsupervised learning | `lectures/lecture19-unsupervised-learning/` | [coding2-debug-19-unsupervised-learning](https://github.com/ulrichwohak/coding2-debug-19-unsupervised-learning) |
-| 20 | `SESSION_20_DATE_TBD` | Regression trees | `lectures/lecture20-regression-tree/` | [coding2-debug-20-regression-tree](https://github.com/ulrichwohak/coding2-debug-20-regression-tree) |
+| 1 | 2 Nov 2026 | [Course introduction](../modules/module00-intro/) and [simple linear regression](../modules/module12-simple-linear-regression/) using Vienna hotel prices | [Regression](../prompts/session01-regression-reconstruction.md) | One homework: [simple linear regression](https://github.com/ulrichwohak/coding2-debug-12-simple-linear-regression) |
+| 2 | 9 Nov 2026 | Continue [multiple-regression workflow](../modules/module13-multiple-regression-workflow/), then [categorical variables and interactions](../modules/module14-categorical-variables-interactions/) and [diagnostics and transformations](../modules/module15-diagnostics-transformations/) using hotel prices | [Specification and diagnostics](../prompts/session02-specification-diagnostics-reconstruction.md) | One homework; repository announced with its release |
+| 3 | 16 Nov 2026 | [Logistic regression](../modules/module16-logistic-regression/) using SHARE health data | [Binary outcomes](../prompts/session03-binary-outcomes-reconstruction.md) | One homework on the session material |
+| 4 | 23 Nov 2026 | [Validation and resampling](../modules/module17-validation-resampling/) and [regularization and pipelines](../modules/module18-regularization-pipelines/) using Airbnb listings in Hackney | [Validation and regularization](../prompts/session04-validation-regularization-reconstruction.md) | One homework on the session material |
+| 5 | 30 Nov 2026 | [Unsupervised learning](../modules/module19-unsupervised-learning/) using World Management Survey data | [Unsupervised learning](../prompts/session05-unsupervised-reconstruction.md) | One homework on the session material |
+| 6 | 7 Dec 2026 | [Regression trees](../modules/module20-regression-tree/) using used-car prices, course synthesis, and exam preparation | [Trees](../prompts/session06-tree-reconstruction.md) | One homework on the session material |
 
-## Homework: Debugging Repositories
+## Assessment
 
-Each session's homework is a stand-alone, intentionally buggy repository that mirrors the lecture. Students clone it (or use the GitHub "Use this template" button), get the project running, and correct the mistakes. Every repository contains at least one software-development bug that stops it from running and one analytic bug, tied to the lecture's substantive content, that lets the project run but makes the results wrong. The corrected project and an explanation of each bug live on the repository's `solutions` branch.
+- **Six debugging homeworks, one per session: 40% in total**, equally weighted.
+- **Written closed-book final exam, without a computer: 60%.** The registrar will announce the slot.
+- **Passing threshold: 50/100 overall.**
 
-## LLM Practice Thread
+Assignment releases specify the repository, deadline, and submission channel. The nine
+topic modules do not create nine separate graded homeworks. Existing debugging repositories
+remain separate projects; the homework release determines which project students submit.
 
-LLM work is integrated throughout Coding 2:
+## Teaching method
 
-- Sessions 12-13: ask an LLM to turn an analytic question into a modeling plan, then revise the plan manually.
-- Sessions 14-16: ask an LLM to explain model terms or debug failing code, then test the explanation against the data.
-- Sessions 17-20: compare model-validation strategies proposed by an LLM, identify missing assumptions, and turn the final plan into reproducible code.
+Students first type and discuss the analysis with the instructor. Once that work is
+complete, each student develops their own prompt asking an LLM to reconstruct the analysis.
+They compare responses against the executed human-built notebook for sample choices,
+units, workflow, terminology, numerical results, and interpretation. Worksheets provide
+a starting point for individual prompts rather than one shared answer.
 
-Use an LLM to help debug the homework repositories if you like, but verify every suggested fix against the data and the lecture material rather than trusting it.
+Individual LLM use also belongs in the debugging homeworks, where students must reproduce
+the problem, test proposed fixes, and explain the corrected analysis. Optional notebook
+extensions provide depth when time allows.
+
+## Opening slides
+
+- [PDF for presenting or printing](../modules/module00-intro/presentation/course-introduction.pdf)
+- [Editable PowerPoint with speaker notes](../modules/module00-intro/presentation/course-introduction.pptx)

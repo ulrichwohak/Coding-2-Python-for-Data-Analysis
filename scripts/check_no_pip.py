@@ -13,7 +13,8 @@ TARGETS = [
     ROOT / "README.md",
     ROOT / "NOTICE.md",
     ROOT / "data",
-    ROOT / "lectures",
+    ROOT / "modules",
+    ROOT / "prompts",
     ROOT / "schedule",
 ]
 PATTERNS = [

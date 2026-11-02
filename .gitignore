@@ -15,3 +15,7 @@ data/raw/*
 .ceu/
 .env
 .env.*
+
+# Local access invitation and scratch notebook
+fr-invitation-token.txt
+modules/module13-multiple-regression-workflow/test.ipynb
