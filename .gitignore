@@ -13,6 +13,7 @@ data/raw/*
 
 # Local CEU AI credentials and file backups
 .ceu/
+ceu-api-credentials.txt
 .env
 .env.*
 
