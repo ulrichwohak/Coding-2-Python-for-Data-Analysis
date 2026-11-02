@@ -39,6 +39,13 @@ course repositories, not automatically to every underlying dataset.
 
 ## Local course contributions
 
+The introductory word-vector demonstration uses Stanford GloVe pretrained vectors
+(Jeffrey Pennington, Richard Socher and Christopher D. Manning, 2014), distributed in
+word2vec text format through the [Gensim data catalogue](https://github.com/piskvorky/gensim-data).
+That catalogue lists the [PDDL](https://opendatacommons.org/licenses/pddl/) license for
+`glove-wiki-gigaword-50`. The model is downloaded locally, not redistributed in this
+repository. See `data/README.md` for the exact release and verified checksums.
+
 The k-means extension, reconstruction worksheets, current notebook sequencing, validation
 checks, and CEU-specific course framing are original adaptations for Coding 2. The software
 dependencies listed in `pyproject.toml` remain governed by their respective licenses.

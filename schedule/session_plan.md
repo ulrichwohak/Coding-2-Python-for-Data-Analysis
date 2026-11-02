@@ -44,3 +44,5 @@ extensions provide depth when time allows.
 
 - [PDF for presenting or printing](../lectures/lecture00-intro/presentation/course-introduction.pdf)
 - [Editable PowerPoint with speaker notes](../lectures/lecture00-intro/presentation/course-introduction.pptx)
+- [LLMs, CEU AI and FirstRung slides](../lectures/lecture00-intro/presentation/llms-ceu-ai-firstrung.pdf)
+- [Short word-vector arithmetic demonstration](../lectures/lecture00-intro/word_vector_arithmetic.ipynb)

@@ -208,6 +208,8 @@ shares CEU's configured request and spending limits.
 
 - `lectures/`: nine substantive topic lectures, grouped into six meetings, plus the course introduction.
 - [Course introduction](lectures/lecture00-intro/): slides in PDF and editable PowerPoint formats.
+- [LLMs, CEU AI and FirstRung](lectures/lecture00-intro/presentation/llms-ceu-ai-firstrung.pdf): how language models work, the course app and API, and coaching support ([PowerPoint](lectures/lecture00-intro/presentation/llms-ceu-ai-firstrung.pptx)).
+- [Word-vector arithmetic](lectures/lecture00-intro/word_vector_arithmetic.ipynb): a short Gensim demonstration with pretrained GloVe vectors.
 - `prompts/`: six human-first reconstruction and audit worksheets.
 - `data/README.md`: dataset sources, extract definitions, and preparation decisions.
 - `harness.md`: editable course guidance automatically supplied to the CEU assistant.

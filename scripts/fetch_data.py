@@ -1,8 +1,9 @@
 """Download and prepare the local teaching datasets for Coding 2.
 
-The source files accompany Gabor Bekes and Gabor Kezdi's *Data Analysis for
-Business, Economics, and Policy*. Notebooks never access these URLs directly:
-this script verifies the source files and writes small, course-ready extracts.
+The analysis datasets accompany Gabor Bekes and Gabor Kezdi's *Data Analysis for
+Business, Economics, and Policy*. The introduction also uses pretrained GloVe
+word vectors. Notebooks never access these URLs directly: this script verifies
+the source files and writes small, course-ready analysis extracts.
 """
 
 from __future__ import annotations
@@ -58,6 +59,12 @@ SOURCES = {
         "used_cars.csv",
         "https://osf.io/7gvz9/download",
         "4db49a2ac9ea87e0cc6df95477d5f17a21ba94fd118f85e70d93befaaca0a819",
+    ),
+    "word_vectors": SourceFile(
+        "glove-wiki-gigaword-50.gz",
+        "https://github.com/piskvorky/gensim-data/releases/download/"
+        "glove-wiki-gigaword-50/glove-wiki-gigaword-50.gz",
+        "5c55f98957aa9fed8d2ac5fb1dcff57af3b23c5a3ee7af3f7945f8d49198eb24",
     ),
 }
 
@@ -270,6 +277,7 @@ def write_dataset(name: str, frame: pd.DataFrame) -> None:
 def main() -> None:
     SOURCE.mkdir(parents=True, exist_ok=True)
     paths = {name: download(source) for name, source in SOURCES.items()}
+    print(f"ready {paths['word_vectors'].relative_to(ROOT)} (pretrained word vectors)")
     write_dataset("hotels_course.csv", prepare_hotels(paths))
     write_dataset("share_health_course.csv", prepare_share_health(paths["share_health"]))
     write_dataset("airbnb_hackney_course.csv", prepare_airbnb(paths["airbnb_london"]))

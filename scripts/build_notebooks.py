@@ -37,6 +37,49 @@ def write_notebook(relative_path: str, cells: list) -> None:
     print(f"wrote {path.relative_to(ROOT)} ({len(cells)} cells)")
 
 
+def word_vector_arithmetic() -> list:
+    return [
+        md(
+            """
+            # Word-vector arithmetic
+
+            A word vector is a list of numbers learned from text. We use pretrained
+            **GloVe** vectors, not the CEU model. Complete the usual repository setup first.
+            """
+        ),
+        code(
+            """
+            from gensim.models import KeyedVectors
+            words = KeyedVectors.load_word2vec_format("../../data/raw/source/glove-wiki-gigaword-50.gz")
+            """
+        ),
+        md("The word `king` is represented by 50 numbers:"),
+        code('words["king"]'),
+        md("We can add and subtract the vectors, one number at a time:"),
+        code('words["king"] - words["man"] + words["woman"]'),
+        md(
+            """
+            Which word best completes **king - man + woman**?
+
+            Gensim's analogy helper adds the `positive` vectors and subtracts the
+            `negative` ones. It first normalizes each vector to length one and excludes
+            the input words from the answers, so this is a normalized version of the
+            arithmetic above.
+            """
+        ),
+        code('words.most_similar(positive=["king", "woman"], negative=["man"], topn=3)'),
+        md(
+            """
+            This is an approximate relationship, not exact equality. The scores are
+            cosine similarities, not probabilities.
+
+            Sources: [GloVe](https://nlp.stanford.edu/projects/glove/),
+            [Gensim's vector-arithmetic documentation](https://radimrehurek.com/gensim/models/keyedvectors.html).
+            """
+        ),
+    ]
+
+
 def lecture12() -> list:
     return [
         md(
@@ -1649,6 +1692,7 @@ def lecture20() -> list:
 
 
 NOTEBOOKS = {
+    "lectures/lecture00-intro/word_vector_arithmetic.ipynb": word_vector_arithmetic,
     "lectures/lecture12-simple-linear-regression/simple_linear_regression.ipynb": lecture12,
     "lectures/lecture13-multiple-regression-workflow/multiple_regression_workflow.ipynb": lecture13,
     "lectures/lecture14-categorical-variables-interactions/categorical_variables_interactions.ipynb": lecture14,

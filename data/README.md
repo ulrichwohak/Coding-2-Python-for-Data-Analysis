@@ -2,7 +2,8 @@
 
 Coding 2 uses course-ready extracts of datasets accompanying Gábor Békés and Gábor
 Kézdi's *Data Analysis for Business, Economics, and Policy*. The extracts are prepared by
-`scripts/fetch_data.py`; notebooks read only the resulting local CSV files.
+`scripts/fetch_data.py`; analysis notebooks read only the resulting local CSV files.
+The short introductory word-vector demonstration also reads a local pretrained model.
 
 Run from the repository root:
 
@@ -45,3 +46,21 @@ the repository root. No path-search setup code is needed.
 
 The source repositories are MIT-licensed, but the underlying datasets remain governed by
 their original documentation and terms. See `NOTICE.md` for code and case-study attribution.
+
+## Introductory word-vector demonstration
+
+The same preparation command downloads `source/glove-wiki-gigaword-50.gz` under
+`data/raw/`: 400,000 words with 50-dimensional GloVe vectors trained on Wikipedia 2014
+and Gigaword. It is a 69,182,535-byte download (about 69 MB), reused after checksum
+verification. The full vocabulary is retained; it is not restricted to the four words
+in the classroom example. The notebook does not download anything or call an LLM API.
+
+Source: [Gensim's GloVe release](https://github.com/piskvorky/gensim-data/releases/tag/glove-wiki-gigaword-50),
+in word2vec text format, from [Stanford GloVe](https://nlp.stanford.edu/projects/glove/).
+The [Gensim catalogue](https://github.com/piskvorky/gensim-data/blob/master/list.json)
+lists the PDDL license and MD5 `c289bc5d7f2f02c6dc9f2f9b67641813`.
+The downloaded file matched that checksum; `fetch_data.py` pins its SHA-256:
+`5c55f98957aa9fed8d2ac5fb1dcff57af3b23c5a3ee7af3f7945f8d49198eb24`.
+
+The vectors remain Git-ignored. They are static word embeddings, not the token
+embeddings or contextual representations of the course's Gemini model.
