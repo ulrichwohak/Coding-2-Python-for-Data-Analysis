@@ -14,7 +14,7 @@ TARGETS = [
     ROOT / "harness.md",
     ROOT / "NOTICE.md",
     ROOT / "data",
-    ROOT / "modules",
+    ROOT / "lectures",
     ROOT / "prompts",
     ROOT / "schedule",
 ]

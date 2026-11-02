@@ -1,6 +1,6 @@
 # Session 2: Reconstructing Model Specification and Diagnostics
 
-Use this worksheet after completing Modules 14 and 15.
+Use this worksheet after completing Lectures 14 and 15.
 
 ## Initial prompt
 

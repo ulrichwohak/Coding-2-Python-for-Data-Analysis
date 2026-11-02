@@ -1,6 +1,6 @@
 # Session 4: Reconstructing Validation and Regularization
 
-Use this worksheet after completing Modules 17 and 18.
+Use this worksheet after completing Lectures 17 and 18.
 
 ## Initial prompt
 

@@ -1,6 +1,6 @@
 # Session 5: Reconstructing PCA and Clustering
 
-Use this worksheet after completing Module 19.
+Use this worksheet after completing Lecture 19.
 
 ## Initial prompt
 

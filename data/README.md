@@ -14,7 +14,7 @@ The first run downloads and verifies the source files. Later runs reuse a source
 when its SHA-256 checksum matches the value recorded in the script. Both source downloads
 and prepared extracts remain under `data/raw/` and are ignored by Git.
 
-Notebooks run from their own module folders and load data directly, for example:
+Notebooks run from their own lecture folders and load data directly, for example:
 `pd.read_csv("../../data/raw/hotels_course.csv")`. The `../..` goes up two folders to
 the repository root. No path-search setup code is needed.
 

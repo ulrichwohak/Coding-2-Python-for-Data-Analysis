@@ -19,9 +19,10 @@ with the instructor before an LLM is introduced. At the end of each scheduled me
 students each develop their own prompt asking an LLM to reconstruct the completed
 workflow. They audit the generated responses against the human-built notebook for
 vocabulary, ordering, implementation, numerical results, and analytic correctness.
-The LLM's code may be more advanced or more complicated than the live-coded version.
-Understanding and critically evaluating that code is part of the exercise; generated
-implementations are not restricted to beginner-level techniques.
+The assistant is encouraged to use advanced implementations rather than beginner-level
+code. It may also introduce analytical choices and extensions beyond the steps listed
+in a prompt. Understanding the code and identifying unexpected choices are part of the
+exercise; the harness does not enforce equivalence with the live-coded analysis.
 
 LLM use continues through the separate debugging homeworks. Students may use an
 LLM to propose diagnoses and fixes, but they remain responsible for executing, testing,
@@ -37,7 +38,7 @@ uv run python scripts/fetch_data.py
 uv run jupyter lab
 ```
 
-Open this repository folder in VS Code, select its `.venv` kernel, and open a module
+Open this repository folder in VS Code, select its `.venv` kernel, and open a lecture
 notebook (or use JupyterLab). Kernels use the notebook's own folder; the VS Code workspace
 setting makes this explicit. Data loading is a plain call such as
 `pd.read_csv("../../data/raw/hotels_course.csv")`: `../..` goes up two folders to the
@@ -61,14 +62,14 @@ If Gemini 3.1 Flash-Lite is unavailable, the app stops rather than switching to 
 You only need to say **what to create, where to put it, and what analysis to do**. For example:
 
 ```text
-Create llm_regression.ipynb in the simple linear regression module.
+Create llm_regression.ipynb in the simple linear regression lecture.
 Use the hotel dataset. Show descriptive statistics for price and distance,
 draw a scatterplot, and regress price on distance.
 ```
 
 The app automatically supplies:
 
-- [harness.md](harness.md): the teacher-editable module/data map, verified hotel variable
+- [harness.md](harness.md): the teacher-editable lecture/data map, verified hotel variable
   meanings, notebook layout, and the reconstruction exercise's coding-style policy;
 - a filtered folder tree;
 - a fresh catalogue of the five approved course extracts: availability, exact column
@@ -81,10 +82,13 @@ supporting documentation; you will see `Reading ...` messages. If data is missin
 `uv run python scripts/fetch_data.py` before trying again. If the guide is missing, the app
 warns you to restore `harness.md`; it does not silently invent its contents.
 
-The guide handles mechanics, not your analytical decisions: specify any sample restriction
-(for example, Vienna hotels), transformation, or special model specification you want.
-It does not direct the model to add these silently. If a choice is ambiguous, the model
-should ask. Check the generated analysis yourself; context does not guarantee correctness.
+The guide supplies mechanics and data context, not a fixed analytical workflow. The model
+may choose sample restrictions, missing-value and outlier handling, transformations,
+predictors, model specifications, diagnostics, and additional analyses without asking for
+approval first. Explicit constraints in your prompt still matter, but the app does not
+check analytical compliance. Inspect the actual code to find unexpected choices and
+decide whether they are justified. The model is not instructed to plant deliberate errors.
+File protections and the rule against inventing uncomputed results remain in place.
 
 Generated files are saved relative to the terminal's current folder and appear in VS Code.
 Requested additions, edits, and file deletions apply automatically, without a confirmation
@@ -118,7 +122,7 @@ a file also tells the model to inspect it first. For example:
 
 ```text
 I want to try a quadratic model. In
-modules/module12-simple-linear-regression/llm_lin_reg.ipynb, replace both
+lectures/lecture12-simple-linear-regression/llm_lin_reg.ipynb, replace both
 regression formulas with second-degree polynomials in distance.
 Keep the other analysis unchanged.
 ```
@@ -158,12 +162,12 @@ not scan your home folder or a parent workspace by accident.
 
 Relative `/add` paths start at the terminal's working folder; absolute paths inside the
 project also work with `/add` and `/drop`. From the course root, use
-`/add data/raw/hotels_course.csv`. A generated notebook saved inside a module instead uses
-`pd.read_csv("../../data/raw/hotels_course.csv")` because its kernel starts in that module
+`/add data/raw/hotels_course.csv`. A generated notebook saved inside a lecture instead uses
+`pd.read_csv("../../data/raw/hotels_course.csv")` because its kernel starts in that lecture
 folder. For example, ask:
 
 ```text
-Create a notebook in modules/module12-simple-linear-regression/analysis.ipynb.
+Create a notebook in lectures/lecture12-simple-linear-regression/analysis.ipynb.
 Find hotels_course.csv, inspect its columns, and regress price and log price on distance.
 ```
 
@@ -184,7 +188,7 @@ text output. `/add` is optional; files already shared in the chat are refreshed 
 For example, replacing the path with your notebook's location:
 
 ```text
-Interpret the saved regression output in modules/module12-simple-linear-regression/analysis.ipynb.
+Interpret the saved regression output in lectures/lecture12-simple-linear-regression/analysis.ipynb.
 Explain the coefficients, p-values, and model fit. Do not modify the notebook.
 ```
 
@@ -202,14 +206,14 @@ shares CEU's configured request and spending limits.
 
 ## Repository materials
 
-- `modules/`: nine substantive topic modules, grouped into six meetings, plus the course introduction.
-- [Course introduction](modules/module00-intro/): slides in PDF and editable PowerPoint formats.
+- `lectures/`: nine substantive topic lectures, grouped into six meetings, plus the course introduction.
+- [Course introduction](lectures/lecture00-intro/): slides in PDF and editable PowerPoint formats.
 - `prompts/`: six human-first reconstruction and audit worksheets.
 - `data/README.md`: dataset sources, extract definitions, and preparation decisions.
 - `harness.md`: editable course guidance automatically supplied to the CEU assistant.
 - `scripts/fetch_data.py`: downloads verified source files and creates local course extracts.
-- `scripts/build_notebooks.py`: reproducibly builds the module notebooks from reviewable cells.
-- `scripts/execute_notebooks.py`: executes each module in a fresh kernel without modifying sources.
+- `scripts/build_notebooks.py`: reproducibly builds the lecture notebooks from reviewable cells.
+- `scripts/execute_notebooks.py`: executes each lecture in a fresh kernel without modifying sources.
 - `scripts/check_no_pip.py`: enforces the course environment policy in student-facing files.
 - `scripts/check_notebooks.py`: validates notebook JSON, metadata, syntax, outputs, and data references.
 - `schedule/session_plan.md`: dates, pacing, reconstruction prompts, and debugging homeworks.
@@ -217,9 +221,9 @@ shares CEU's configured request and spending limits.
 
 ## Six-session structure
 
-Sessions are scheduled class meetings. Modules are topic units: one meeting can cover
-several modules, and a module can continue into a later meeting. The plan below shows the
-intended grouping. See the [dated session plan](schedule/session_plan.md) for module links
+The lecture folders contain nine topic units taught across six scheduled class meetings.
+Folder numbers do not identify separate meeting dates. The plan below shows the
+intended grouping. See the [dated session plan](schedule/session_plan.md) for lecture links
 and homework information.
 
 1. Course introduction and simple linear regression using the European hotels case.
@@ -230,7 +234,7 @@ and homework information.
 6. Regression trees and course synthesis using used-car prices.
 
 Each 100-minute meeting combines live coding, individual LLM reconstruction, and discussion
-of the comparison. Pacing depends on progress through the modules. Optional notebook
+of the comparison. Pacing depends on progress through the lectures. Optional notebook
 extensions provide additional depth when the live coding moves quickly.
 
 ## Assessment
@@ -257,7 +261,7 @@ By the end of the course, students should be able to:
 
 ## AI and LLM policy
 
-Module analysis is completed by hand with the instructor before any LLM reconstruction.
+Lecture analysis is completed by hand with the instructor before any LLM reconstruction.
 Each student's prompt functions as an analytic specification: it records the question,
 data, required steps, outputs, constraints, and checks. Generated responses are stochastic
 comparison objects and are not canonical course solutions.

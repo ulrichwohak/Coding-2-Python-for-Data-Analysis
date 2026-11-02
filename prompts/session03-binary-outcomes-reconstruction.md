@@ -1,6 +1,6 @@
 # Session 3: Reconstructing a Binary-Outcome Analysis
 
-Use this worksheet after completing Module 16.
+Use this worksheet after completing Lecture 16.
 
 ## Initial prompt
 

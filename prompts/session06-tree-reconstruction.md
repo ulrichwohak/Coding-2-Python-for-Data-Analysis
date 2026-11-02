@@ -1,6 +1,6 @@
 # Session 6: Reconstructing a Regression-Tree Workflow
 
-Use this worksheet after completing Module 20.
+Use this worksheet after completing Lecture 20.
 
 ## Initial prompt
 
