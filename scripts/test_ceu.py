@@ -490,9 +490,67 @@ class ProjectTests(unittest.TestCase):
         return [json.loads(call.args[1]["messages"][0]["content"][len(ceu.INSTRUCTIONS) + 1:])
                 for call in client.request.call_args_list if call.args[0].endswith("/chat")]
 
+    def test_shipped_policy_allows_analytical_discretion_and_encourages_advanced_code(self):
+        guide = (ROOT / "harness.md").read_text()
+        self.file("harness.md", guide)
+        client = self.client([{"message": "Ready", "files": []}])
+        ceu.generate_with_project(client, self.root, "Create an analysis", set(), [], set(), lambda _: None)
+        self.assertEqual(self.payloads(client)[0]["course"]["guide"]["content"], guide)
+        for text in (ceu.INSTRUCTIONS, guide):
+            normalized = " ".join(text.split())
+            self.assertIn("Prefer an idiomatic, advanced implementation", normalized)
+            self.assertIn("does not limit analytical scope to the steps listed in the prompt", normalized)
+            self.assertIn("without seeking approval for each choice", normalized)
+            self.assertIn("Follow explicit constraints", normalized)
+            self.assertIn("do not deliberately insert errors", normalized)
+            self.assertNotIn("Do not silently restrict", normalized)
+            self.assertNotIn("Preserve samples, outcomes, and predictors unless asked", normalized)
+            self.assertNotIn("clarify ambiguous model choices", normalized)
+
+    def test_advanced_notebook_with_analytical_extensions_is_saved_without_scope_filtering(self):
+        import nbformat
+
+        # This verifies file handling, not whether a live model will choose this analysis.
+        data = "price,distance_miles,rating\n80,2.5,4.0\n90,3.0,4.5\n"
+        dataset = self.file("data/raw/hotels_course.csv", data)
+        reference = self.file("lectures/topic/reference.ipynb", "REFERENCE_UNCHANGED")
+        name = "lectures/topic/llm_analysis.ipynb"
+        code = (
+            "import pandas as pd\n"
+            "import statsmodels.formula.api as smf\n\n"
+            "def fit_models(frame: pd.DataFrame, formulas: dict[str, str]) -> dict:\n"
+            "    sample = frame.dropna(subset=['price', 'distance_miles', 'rating']).copy()\n"
+            "    sample = sample.loc[sample['price'] <= sample['price'].quantile(0.99)]\n"
+            "    return {name: smf.ols(formula, data=sample).fit(cov_type='HC3')\n"
+            "            for name, formula in formulas.items()}\n\n"
+            "frame = pd.read_csv('../../data/raw/hotels_course.csv')\n"
+            "models = fit_models(frame, {\n"
+            "    'simple': 'price ~ distance_miles',\n"
+            "    'extended': 'price ~ distance_miles + I(distance_miles ** 2) + rating',\n"
+            "})\n"
+            "comparison = pd.DataFrame({name: {'n': fit.nobs, 'adj_r2': fit.rsquared_adj}\n"
+            "                           for name, fit in models.items()}).T"
+        )
+        client = self.client([{"message": "Notebook ready", "files": [
+            {"path": name, "content": {"cells": [{"cell_type": "code", "source": code}]}}
+        ]}])
+        reply, context = ceu.generate_with_project(
+            client, self.root, "Create a notebook regressing price on distance.",
+            set(), [], set(), lambda _: None,
+        )
+        changed = ceu.apply_files(self.root, reply["files"], expected=context, emit=lambda _: None)
+        self.assertEqual(changed, [name])
+        saved = nbformat.read(self.root / name, as_version=4)
+        self.assertEqual(saved.cells[0].source, code)
+        self.assertIsNone(saved.cells[0].execution_count)
+        self.assertEqual(saved.cells[0].outputs, [])
+        self.assertEqual(dataset.read_text(), data)
+        self.assertEqual(reference.read_text(), "REFERENCE_UNCHANGED")
+        self.assertEqual(self.payloads(client)[0]["shared_files"], {})
+
     def test_tree_lists_supported_files_without_reading_them(self):
         self.file("README.md")
-        self.file("modules/topic/analysis.ipynb")
+        self.file("lectures/topic/analysis.ipynb")
         self.file("data/raw/hotels.csv")
         self.file("pyproject.toml")
         for name in (".ceu/config.json", ".git/config", ".venv/anything.py", "venv/anything.py",
@@ -504,10 +562,10 @@ class ProjectTests(unittest.TestCase):
         with patch.object(Path, "read_text", side_effect=AssertionError("Tree must not read file contents")):
             project = ceu.project_snapshot(self.root, set())
         names = project["tree"]
-        for name in ("README.md", "modules/", "modules/topic/", "modules/topic/analysis.ipynb",
+        for name in ("README.md", "lectures/", "lectures/topic/", "lectures/topic/analysis.ipynb",
                      "data/", "data/raw/", "data/raw/hotels.csv", "pyproject.toml"):
             self.assertIn(name, names)
-        self.assertEqual(set(names), {"README.md", "modules/", "modules/topic/", "modules/topic/analysis.ipynb",
+        self.assertEqual(set(names), {"README.md", "lectures/", "lectures/topic/", "lectures/topic/analysis.ipynb",
                                       "data/", "data/raw/", "data/raw/hotels.csv", "pyproject.toml", "nested/"})
         self.assertNotIn(str(self.root), json.dumps(project))
         self.assertFalse(project["truncated"])
@@ -536,14 +594,14 @@ class ProjectTests(unittest.TestCase):
 
     def test_model_reads_real_columns_before_notebook_generation(self):
         self.file("data/raw/hotels.csv", "price,distance_miles,log_price\n80,2.5,4.38\n")
-        self.file("README.md", "Notebooks are in modules/topic.")
+        self.file("README.md", "Notebooks are in lectures/topic.")
         self.file("unrequested.py", "UNREQUESTED_CONTENT")
-        self.file("modules/topic/README.md", "A module")
+        self.file("lectures/topic/README.md", "A lecture")
         notebook = {"nbformat": 4, "nbformat_minor": 5, "metadata": {}, "cells": [
             {"cell_type": "code", "metadata": {}, "source": ["x = 1\n", "raise RuntimeError('not executed')\n"],
              "execution_count": None, "outputs": []}]}
         final = {"message": "Notebook created", "files": [
-            {"path": "modules/topic/new.ipynb", "content": json.dumps(notebook)}]}
+            {"path": "lectures/topic/new.ipynb", "content": json.dumps(notebook)}]}
         client = self.client([
             {"message": "Inspect data and layout", "read_files": ["data/raw/hotels.csv", "README.md"], "files": []},
             final,
@@ -554,14 +612,14 @@ class ProjectTests(unittest.TestCase):
         payloads = self.payloads(client)
         self.assertEqual(len(payloads), 2)
         self.assertEqual(payloads[0]["shared_files"], {})
-        self.assertIn("modules/topic/", payloads[0]["project"]["tree"])
+        self.assertIn("lectures/topic/", payloads[0]["project"]["tree"])
         summary = json.loads(payloads[1]["shared_files"]["data/raw/hotels.csv"])
         self.assertIn("distance_miles", [column["name"] for column in summary["columns"]])
         self.assertEqual(shared, {"data/raw/hotels.csv", "README.md"})
         self.assertNotIn("UNREQUESTED_CONTENT", json.dumps(payloads))
-        self.assertFalse((self.root / "modules/topic/new.ipynb").exists())
+        self.assertFalse((self.root / "lectures/topic/new.ipynb").exists())
         saved = ceu.apply_files(self.root, reply["files"], lambda _: True, lambda _: None, expected=context)
-        self.assertEqual(saved, ["modules/topic/new.ipynb"])
+        self.assertEqual(saved, ["lectures/topic/new.ipynb"])
         self.assertTrue(json.loads((self.root / saved[0]).read_text())["cells"][0]["id"])
         self.assertTrue(any("CSV summary" in line for line in log))
 
@@ -638,7 +696,7 @@ class ProjectTests(unittest.TestCase):
 
     def test_invalid_notebook_is_corrected_once_before_chat_saves_anything(self):
         self.file("data/raw/hotels.csv", "price,distance_miles\n80,2.5\n")
-        name = "modules/topic/new.ipynb"
+        name = "lectures/topic/new.ipynb"
         notebook = {"nbformat": 4, "nbformat_minor": 5, "metadata": {}, "cells": [
             {"cell_type": "code", "metadata": {}, "source": ["raise RuntimeError('not executed')\n"],
              "execution_count": None, "outputs": []}]}
@@ -675,7 +733,7 @@ class ProjectTests(unittest.TestCase):
         self.assertEqual(list(self.root.iterdir()), [])
 
     def test_malformed_reply_is_corrected_before_editing_shared_notebook(self):
-        name = "modules/topic/analysis.ipynb"
+        name = "lectures/topic/analysis.ipynb"
         old = ceu.notebook_content({"cells": [{"cell_type": "code", "source": "x = 1"}]})
         path = self.file(name, old)
         malformed = '{"message": "PRIVATE_REPLY_SENTINEL", "files": [}'
@@ -688,7 +746,7 @@ class ProjectTests(unittest.TestCase):
             self.assertFalse((self.root / ".ceu").exists())
             return respond(route, body)
         client.request.side_effect = check_original
-        prompt = "Revise the model in modules/topic/analysis.ipynb"
+        prompt = "Revise the model in lectures/topic/analysis.ipynb"
         inputs = iter(["/add " + name, prompt, "/quit"])
         with contextlib.redirect_stdout(io.StringIO()) as output:
             ceu.run_chat(client, self.root, lambda _: next(inputs))
@@ -888,7 +946,7 @@ class ProjectTests(unittest.TestCase):
         self.file("harness.md", "Keep each step in a separate cell.")
         self.file("data/raw/hotels_course.csv", "price,distance_miles,label\n80,2.5,ROW_VALUE_SENTINEL\n")
         self.file("data/raw/unapproved.csv", "UNAPPROVED_HEADER\nUNAPPROVED_ROW\n")
-        self.file("modules/topic/reference.ipynb", "REFERENCE_SENTINEL")
+        self.file("lectures/topic/reference.ipynb", "REFERENCE_SENTINEL")
         self.file("ceu-api-credentials.txt", "CREDENTIAL_SENTINEL")
         course = ceu.course_context(self.root, set())
         self.assertEqual(course["guide"]["status"], "available")
@@ -1043,7 +1101,7 @@ class ProjectTests(unittest.TestCase):
         self.assertEqual(path.read_text(), "Keep me")
 
     def test_model_can_request_existing_notebooks_and_builder_without_manual_sharing(self):
-        names = ["modules/topic/reference.ipynb", "scripts/build_notebooks.py"]
+        names = ["lectures/topic/reference.ipynb", "scripts/build_notebooks.py"]
         for name in names:
             self.file(name, "REFERENCE_CONTENT_SENTINEL")
         client = self.client([{"message": "Read", "read_files": names, "files": []},
@@ -1065,7 +1123,7 @@ class ProjectTests(unittest.TestCase):
         self.assertNotIn(names[1], payload["shared_files"])
 
     def test_model_reads_then_edits_notebook_and_keeps_backup(self):
-        name = "modules/topic/analysis.ipynb"
+        name = "lectures/topic/analysis.ipynb"
         old = ceu.notebook_content({"cells": [{"cell_type": "code", "source": "x = 1"}]})
         path = self.file(name, old)
         client = self.client([{"message": "Inspect notebook", "read_files": [str(path)], "files": []},
@@ -1088,7 +1146,7 @@ class ProjectTests(unittest.TestCase):
         self.assertEqual(backups[0].read_text(), old)
 
     def test_read_mechanism_has_no_prompt_position_or_wording_requirement(self):
-        name = "modules/topic/my analysis.ipynb"
+        name = "lectures/topic/my analysis.ipynb"
         path = self.file(name, "NOTEBOOK_SENTINEL")
         # These mocks test the app's read mechanism, not the model's language understanding.
         # Real-model probes cover whether it chooses the appropriate read action.
@@ -1180,7 +1238,7 @@ class ProjectTests(unittest.TestCase):
     def test_created_notebook_remains_context_without_manual_add(self):
         notebook = {"nbformat": 4, "nbformat_minor": 5, "metadata": {}, "cells": [
             {"cell_type": "code", "metadata": {}, "source": "x = 1", "execution_count": None, "outputs": []}]}
-        name = "modules/topic/new.ipynb"
+        name = "lectures/topic/new.ipynb"
         client = self.client([{"message": "Created", "files": [{"path": name, "content": json.dumps(notebook)}]},
                               {"message": "Explain", "files": []}])
         inputs = iter(["Create a notebook", "Explain the notebook", "/quit"])
@@ -1190,7 +1248,7 @@ class ProjectTests(unittest.TestCase):
         self.assertIn(name, payload["shared_files"])
 
     def test_created_notebook_saved_outputs_are_refreshed_for_interpretation(self):
-        name = "modules/topic/analysis.ipynb"
+        name = "lectures/topic/analysis.ipynb"
         notebook = {"cells": [{"cell_type": "code", "source": "print('example output')"}]}
         client = self.client([
             {"message": "Created", "files": [{"path": name, "content": notebook}]},
@@ -1228,12 +1286,15 @@ class ProjectTests(unittest.TestCase):
         self.assertEqual(set(ceu.COURSE_DATASETS), outputs)
         for name in ceu.COURSE_DATASETS:
             self.assertIn(Path(name).name, guide)
-        for line in guide.splitlines():
-            if line.startswith("| ") and "`modules/" in line:
-                folder = line.split("`")[1]
-                dataset = line.split("`")[3]
-                self.assertTrue((ROOT / folder).is_dir())
-                self.assertIn(dataset, (ROOT / folder / "README.md").read_text())
+        lecture_rows = [line for line in guide.splitlines()
+                        if line.startswith("| ") and "`lectures/" in line]
+        self.assertEqual(len(lecture_rows), 9)
+        for line in lecture_rows:
+            folder = line.split("`")[1]
+            dataset = line.split("`")[3]
+            self.assertTrue(Path(folder).name.startswith("lecture"))
+            self.assertTrue((ROOT / folder).is_dir())
+            self.assertIn(dataset, (ROOT / folder / "README.md").read_text())
 
 
 class ProtocolTests(unittest.TestCase):

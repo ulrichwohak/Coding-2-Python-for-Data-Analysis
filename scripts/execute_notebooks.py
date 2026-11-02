@@ -1,4 +1,4 @@
-"""Execute every module notebook from a fresh kernel without modifying sources."""
+"""Execute every lecture notebook from a fresh kernel without modifying sources."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from nbclient import NotebookClient
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULES = ROOT / "modules"
+LECTURES = ROOT / "lectures"
 
 
 def execute(path: Path, output_dir: Path | None) -> None:
@@ -24,7 +24,7 @@ def execute(path: Path, output_dir: Path | None) -> None:
     )
     client.execute()
     if output_dir is not None:
-        relative = path.relative_to(MODULES)
+        relative = path.relative_to(LECTURES)
         destination = output_dir / relative
         destination.parent.mkdir(parents=True, exist_ok=True)
         nbformat.write(notebook, destination)
@@ -38,7 +38,7 @@ def main() -> None:
     # Preserve figures in the executed copy, just as JupyterLab does for students.
     os.environ.setdefault("MPLBACKEND", "module://matplotlib_inline.backend_inline")
 
-    for path in sorted(MODULES.rglob("*.ipynb")):
+    for path in sorted(LECTURES.rglob("*.ipynb")):
         execute(path, arguments.output_dir)
 
 

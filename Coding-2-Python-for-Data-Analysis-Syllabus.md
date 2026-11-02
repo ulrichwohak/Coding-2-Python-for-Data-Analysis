@@ -95,7 +95,7 @@ human-built and executed notebook remains the reference analysis. Students work 
 in a reproducible `uv` environment.
 
 Homework is completed outside class in separate, intentionally buggy GitHub repositories.
-Each homework mirrors the module material and asks students to work as an analyst
+Each homework mirrors the lecture material and asks students to work as an analyst
 reviewing a colleague's notebook: reproduce the problem, correct the code, check the
 analytic logic, and make the notebook's interpretation consistent with the evidence. This
 is where students may also use an LLM individually, while testing and explaining every proposed
@@ -166,10 +166,10 @@ and comparable tools.
 
 ## Course contents and schedule
 
-The six scheduled meetings cover nine connected topic modules. Modules are topic units,
-not separate scheduled lectures: one meeting can cover several modules, and a module may
-continue into a later meeting. There is one debugging homework per session, for six in
-total. Assignment releases identify the repository and submission arrangements.
+The six scheduled meetings cover nine connected topics stored in numbered lecture folders.
+Folder numbers do not identify separate meeting dates: one meeting can cover several
+topics, and a topic may continue into a later meeting. There is one debugging homework per
+session, for six in total. Assignment releases identify the repository and submission arrangements.
 
 ### Session 1 — 2 November · Introduction and simple linear regression
 
@@ -177,7 +177,7 @@ total. Assignment releases identify the repository and submission arrangements.
   hotel-price data.
 - Simple linear regression, residuals, prediction, and interpreting a slope with units.
 - Course introduction and the reproducible project workflow.
-- Materials: `modules/module00-intro/` and `modules/module12-simple-linear-regression/`.
+- Materials: `lectures/lecture00-intro/` and `lectures/lecture12-simple-linear-regression/`.
 - Reconstruction audit: turn the completed regression workflow into an explicit
   specification and compare it with an LLM reconstruction.
 - Homework: one assignment on simple linear regression.
@@ -189,9 +189,9 @@ total. Assignment releases identify the repository and submission arrangements.
   European hotel-price data.
 - Residual diagnostics, heteroscedasticity, transformations, and back-transforming
   predictions.
-- Materials: `modules/module13-multiple-regression-workflow/`,
-  `modules/module14-categorical-variables-interactions/`, and
-  `modules/module15-diagnostics-transformations/`.
+- Materials: `lectures/lecture13-multiple-regression-workflow/`,
+  `lectures/lecture14-categorical-variables-interactions/`, and
+  `lectures/lecture15-diagnostics-transformations/`.
 - Reconstruction audit: check whether an LLM preserves the specification, diagnostic
   sequence, transformations, and interpretation units.
 - Homework: one debugging assignment, announced with its release.
@@ -201,7 +201,7 @@ total. Assignment releases identify the repository and submission arrangements.
 - Binary outcomes, log odds, odds ratios, and probability predictions using SHARE health
   data.
 - Classification thresholds, class imbalance, classification metrics, and ROC AUC.
-- Materials: `modules/module16-logistic-regression/`.
+- Materials: `lectures/lecture16-logistic-regression/`.
 - Reconstruction audit: compare probability modeling, marginal effects, calibration, and
   threshold choices.
 - Homework: one debugging assignment on the session material.
@@ -211,8 +211,8 @@ total. Assignment releases identify the repository and submission arrangements.
 - Holdout validation, cross-validation, uncertainty across folds, and model complexity
   using Airbnb listings in Hackney.
 - Preprocessing pipelines, scaling, encoding, Ridge and Lasso regression, and data leakage.
-- Materials: `modules/module17-validation-resampling/` and
-  `modules/module18-regularization-pipelines/`.
+- Materials: `lectures/lecture17-validation-resampling/` and
+  `lectures/lecture18-regularization-pipelines/`.
 - Reconstruction audit: look for data leakage, inconsistent splits, preprocessing outside
   the pipeline, and misuse of the final test set.
 - Homework: one debugging assignment on the session material.
@@ -222,7 +222,7 @@ total. Assignment releases identify the repository and submission arrangements.
 - Standardization, principal component analysis, k-means clustering, and silhouette
   scores using World Management Survey data.
 - Building useful cluster summaries without using an outcome label during fitting.
-- Materials: `modules/module19-unsupervised-learning/`.
+- Materials: `lectures/lecture19-unsupervised-learning/`.
 - Reconstruction audit: check scaling, PCA interpretation, cluster selection, and whether
   outcomes were improperly used while fitting clusters.
 - Homework: one debugging assignment on the session material.
@@ -234,14 +234,14 @@ total. Assignment releases identify the repository and submission arrangements.
 - Feature importance, model visualization, interpretability, and comparison with linear
   models.
 - Course synthesis and final-exam preparation.
-- Materials: `modules/module20-regression-tree/`.
+- Materials: `lectures/lecture20-regression-tree/`.
 - Reconstruction audit: compare tuning logic, final evaluation, feature importance, and
   claims about interpretation.
 - Homework: one debugging assignment on the session material.
 
 ## Course materials and reproducibility
 
-All required module materials are stored in the course repository. The notebooks use
+All required lecture materials are stored in the course repository. The notebooks use
 local, documented teaching extracts from datasets accompanying the Gábor Békés and Gábor
 Kézdi data-analysis materials: European hotels, SHARE health, Airbnb listings, the World
 Management Survey, and used-car prices. Source attribution and preparation decisions are
@@ -253,7 +253,7 @@ uv sync
 uv run python scripts/fetch_data.py
 ```
 
-The nine populated module notebooks are grouped into six meetings. The `prompts/`
+The nine populated lecture notebooks are grouped into six meetings. The `prompts/`
 directory contains the six post-analysis reconstruction worksheets. Each homework
 repository has its own environment and local dataset. Follow the README in that repository
 and run `uv sync` before opening its notebook. Do not install packages from inside a

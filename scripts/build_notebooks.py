@@ -37,11 +37,11 @@ def write_notebook(relative_path: str, cells: list) -> None:
     print(f"wrote {path.relative_to(ROOT)} ({len(cells)} cells)")
 
 
-def module12() -> list:
+def lecture12() -> list:
     return [
         md(
             """
-            # Module 12: Simple Linear Regression
+            # Lecture 12: Simple Linear Regression
 
             **Case:** How is a Vienna hotel's room price associated with its distance from
             the city centre?
@@ -203,7 +203,7 @@ def module12() -> list:
             than the distance-only model predicts. It does not by itself tell us whether
             the hotel is overpriced; the model ignores hotel quality.
 
-            Continue to Module 13, where we add those features deliberately.
+            Continue to Lecture 13, where we add those features deliberately.
 
             ### Optional extension
 
@@ -222,16 +222,16 @@ def module12() -> list:
     ]
 
 
-def module13() -> list:
+def lecture13() -> list:
     return [
         md(
             """
-            # Module 13: Multiple Regression and Workflow Design
+            # Lecture 13: Multiple Regression and Workflow Design
 
             **Case:** Which Vienna hotels appear inexpensive relative to their location and
             observable quality?
 
-            This extends the simple regression from Module 12. We specify candidate
+            This extends the simple regression from Lecture 12. We specify candidate
             models, compare them, construct honest interpretations, and distinguish a
             confidence interval for a mean from a prediction interval for one hotel.
 
@@ -302,7 +302,7 @@ def module13() -> list:
             """
             Adjusted R-squared and AIC describe in-sample fit with different complexity
             penalties. They are useful here, but they are not substitutes for honest
-            out-of-sample evaluation; that arrives in Module 17.
+            out-of-sample evaluation; that arrives in Lecture 17.
             """
         ),
         code(
@@ -404,11 +404,11 @@ def module13() -> list:
     ]
 
 
-def module14() -> list:
+def lecture14() -> list:
     return [
         md(
             """
-            # Module 14: Categorical Variables and Interactions
+            # Lecture 14: Categorical Variables and Interactions
 
             We continue with the European hotels case. Categorical coefficients always
             compare groups to a reference category; interactions allow a slope to differ
@@ -543,17 +543,17 @@ def module14() -> list:
             slopes*. The clearest explanation usually combines the relevant coefficients
             or shows predicted values, as we did above.
 
-            Continue to Module 15 before running the Session 2 reconstruction exercise.
+            Continue to Lecture 15 before running the Session 2 reconstruction exercise.
             """
         ),
     ]
 
 
-def module15() -> list:
+def lecture15() -> list:
     return [
         md(
             """
-            # Module 15: Diagnostics and Transformations
+            # Lecture 15: Diagnostics and Transformations
 
             Diagnostics ask where a model is systematically wrong. We use residual plots,
             a heteroskedasticity test, nonlinear terms, robust uncertainty, and influence
@@ -709,11 +709,11 @@ def module15() -> list:
     ]
 
 
-def module16() -> list:
+def lecture16() -> list:
     return [
         md(
             """
-            # Module 16: Logistic Regression and Classification
+            # Lecture 16: Logistic Regression and Classification
 
             **Case:** Which characteristics are associated with remaining healthy over the
             next survey wave?
@@ -935,11 +935,11 @@ def airbnb_setup_cells() -> list:
     ]
 
 
-def module17() -> list:
+def lecture17() -> list:
     cells = [
         md(
             """
-            # Module 17: Validation and Resampling
+            # Lecture 17: Validation and Resampling
 
             **Case:** How accurately can listing features predict an Airbnb price in
             Hackney?
@@ -1084,7 +1084,7 @@ def module17() -> list:
                 plausible training samples. The untouched holdout answers a different
                 question: how did the selected workflow perform on data it never influenced?
 
-                Continue to Module 18, where regularization is tuned within the same
+                Continue to Lecture 18, where regularization is tuned within the same
                 training data and evaluated on the same untouched holdout definition.
 
                 ### Optional extension
@@ -1098,11 +1098,11 @@ def module17() -> list:
     return cells
 
 
-def module18() -> list:
+def lecture18() -> list:
     cells = [
         md(
             """
-            # Module 18: Regularization and Pipelines
+            # Lecture 18: Regularization and Pipelines
 
             Ridge and LASSO control model flexibility by shrinking coefficients. Their
             tuning parameter must be selected inside cross-validation, while all imputing,
@@ -1272,11 +1272,11 @@ def module18() -> list:
     return cells
 
 
-def module19() -> list:
+def lecture19() -> list:
     return [
         md(
             """
-            # Module 19: PCA and Clustering
+            # Lecture 19: PCA and Clustering
 
             **Case:** Can several dimensions of management practice be summarized, and do
             firms form useful descriptive groups?
@@ -1432,11 +1432,11 @@ def module19() -> list:
     ]
 
 
-def module20() -> list:
+def lecture20() -> list:
     return [
         md(
             """
-            # Module 20: Regression Trees
+            # Lecture 20: Regression Trees
 
             **Case:** Predict the price of a used Toyota Camry from its age and features.
 
@@ -1649,15 +1649,15 @@ def module20() -> list:
 
 
 NOTEBOOKS = {
-    "modules/module12-simple-linear-regression/simple_linear_regression.ipynb": module12,
-    "modules/module13-multiple-regression-workflow/multiple_regression_workflow.ipynb": module13,
-    "modules/module14-categorical-variables-interactions/categorical_variables_interactions.ipynb": module14,
-    "modules/module15-diagnostics-transformations/diagnostics_transformations.ipynb": module15,
-    "modules/module16-logistic-regression/logistic_regression.ipynb": module16,
-    "modules/module17-validation-resampling/validation_resampling.ipynb": module17,
-    "modules/module18-regularization-pipelines/regularization_pipelines.ipynb": module18,
-    "modules/module19-unsupervised-learning/unsupervised_learning.ipynb": module19,
-    "modules/module20-regression-tree/regression_tree.ipynb": module20,
+    "lectures/lecture12-simple-linear-regression/simple_linear_regression.ipynb": lecture12,
+    "lectures/lecture13-multiple-regression-workflow/multiple_regression_workflow.ipynb": lecture13,
+    "lectures/lecture14-categorical-variables-interactions/categorical_variables_interactions.ipynb": lecture14,
+    "lectures/lecture15-diagnostics-transformations/diagnostics_transformations.ipynb": lecture15,
+    "lectures/lecture16-logistic-regression/logistic_regression.ipynb": lecture16,
+    "lectures/lecture17-validation-resampling/validation_resampling.ipynb": lecture17,
+    "lectures/lecture18-regularization-pipelines/regularization_pipelines.ipynb": lecture18,
+    "lectures/lecture19-unsupervised-learning/unsupervised_learning.ipynb": lecture19,
+    "lectures/lecture20-regression-tree/regression_tree.ipynb": lecture20,
 }
 
 

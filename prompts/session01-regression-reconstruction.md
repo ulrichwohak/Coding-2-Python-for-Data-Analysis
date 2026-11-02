@@ -1,8 +1,8 @@
 # Session 1: Reconstructing a Regression Workflow
 
-Use this worksheet after completing the human analysis in Module 12. Each student
+Use this worksheet after completing the human analysis in Lecture 12. Each student
 develops their own prompt. Include only the steps completed in class; extend the prompt
-with multiple regression after covering Module 13 in a later meeting.
+with multiple regression after covering Lecture 13 in a later meeting.
 
 ## Initial prompt
 

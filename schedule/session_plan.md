@@ -3,20 +3,20 @@
 Coding 2 meets on Mondays from **15:40 to 17:20**, from **2 November to 7 December 2026**.
 There are six scheduled 100-minute meetings. The room remains to be confirmed.
 
-Sessions are class meetings. Modules 12–20 are nine topic units: one meeting can cover
-several modules, and a module may continue into a later meeting. The grouping below is a
+Sessions are class meetings. Lecture folders 12–20 contain nine topic units: one meeting can
+cover several topics, and a topic may continue into a later meeting. The grouping below is a
 teaching plan that can adapt to class progress.
 
 ## Schedule
 
 | Session | Date | Live coding and discussion | Reconstruction worksheet | Homework |
 | --- | --- | --- | --- | --- |
-| 1 | 2 Nov 2026 | [Course introduction](../modules/module00-intro/) and [simple linear regression](../modules/module12-simple-linear-regression/) using Vienna hotel prices | [Regression](../prompts/session01-regression-reconstruction.md) | One homework: [simple linear regression](https://github.com/ulrichwohak/coding2-debug-12-simple-linear-regression) |
-| 2 | 9 Nov 2026 | Continue [multiple-regression workflow](../modules/module13-multiple-regression-workflow/), then [categorical variables and interactions](../modules/module14-categorical-variables-interactions/) and [diagnostics and transformations](../modules/module15-diagnostics-transformations/) using hotel prices | [Specification and diagnostics](../prompts/session02-specification-diagnostics-reconstruction.md) | One homework; repository announced with its release |
-| 3 | 16 Nov 2026 | [Logistic regression](../modules/module16-logistic-regression/) using SHARE health data | [Binary outcomes](../prompts/session03-binary-outcomes-reconstruction.md) | One homework on the session material |
-| 4 | 23 Nov 2026 | [Validation and resampling](../modules/module17-validation-resampling/) and [regularization and pipelines](../modules/module18-regularization-pipelines/) using Airbnb listings in Hackney | [Validation and regularization](../prompts/session04-validation-regularization-reconstruction.md) | One homework on the session material |
-| 5 | 30 Nov 2026 | [Unsupervised learning](../modules/module19-unsupervised-learning/) using World Management Survey data | [Unsupervised learning](../prompts/session05-unsupervised-reconstruction.md) | One homework on the session material |
-| 6 | 7 Dec 2026 | [Regression trees](../modules/module20-regression-tree/) using used-car prices, course synthesis, and exam preparation | [Trees](../prompts/session06-tree-reconstruction.md) | One homework on the session material |
+| 1 | 2 Nov 2026 | [Course introduction](../lectures/lecture00-intro/) and [simple linear regression](../lectures/lecture12-simple-linear-regression/) using Vienna hotel prices | [Regression](../prompts/session01-regression-reconstruction.md) | One homework: [simple linear regression](https://github.com/ulrichwohak/coding2-debug-12-simple-linear-regression) |
+| 2 | 9 Nov 2026 | Continue [multiple-regression workflow](../lectures/lecture13-multiple-regression-workflow/), then [categorical variables and interactions](../lectures/lecture14-categorical-variables-interactions/) and [diagnostics and transformations](../lectures/lecture15-diagnostics-transformations/) using hotel prices | [Specification and diagnostics](../prompts/session02-specification-diagnostics-reconstruction.md) | One homework; repository announced with its release |
+| 3 | 16 Nov 2026 | [Logistic regression](../lectures/lecture16-logistic-regression/) using SHARE health data | [Binary outcomes](../prompts/session03-binary-outcomes-reconstruction.md) | One homework on the session material |
+| 4 | 23 Nov 2026 | [Validation and resampling](../lectures/lecture17-validation-resampling/) and [regularization and pipelines](../lectures/lecture18-regularization-pipelines/) using Airbnb listings in Hackney | [Validation and regularization](../prompts/session04-validation-regularization-reconstruction.md) | One homework on the session material |
+| 5 | 30 Nov 2026 | [Unsupervised learning](../lectures/lecture19-unsupervised-learning/) using World Management Survey data | [Unsupervised learning](../prompts/session05-unsupervised-reconstruction.md) | One homework on the session material |
+| 6 | 7 Dec 2026 | [Regression trees](../lectures/lecture20-regression-tree/) using used-car prices, course synthesis, and exam preparation | [Trees](../prompts/session06-tree-reconstruction.md) | One homework on the session material |
 
 ## Assessment
 
@@ -25,7 +25,7 @@ teaching plan that can adapt to class progress.
 - **Passing threshold: 50/100 overall.**
 
 Assignment releases specify the repository, deadline, and submission channel. The nine
-topic modules do not create nine separate graded homeworks. Existing debugging repositories
+topic lectures do not create nine separate graded homeworks. Existing debugging repositories
 remain separate projects; the homework release determines which project students submit.
 
 ## Teaching method
@@ -42,5 +42,5 @@ extensions provide depth when time allows.
 
 ## Opening slides
 
-- [PDF for presenting or printing](../modules/module00-intro/presentation/course-introduction.pdf)
-- [Editable PowerPoint with speaker notes](../modules/module00-intro/presentation/course-introduction.pptx)
+- [PDF for presenting or printing](../lectures/lecture00-intro/presentation/course-introduction.pdf)
+- [Editable PowerPoint with speaker notes](../lectures/lecture00-intro/presentation/course-introduction.pptx)
