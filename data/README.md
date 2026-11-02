@@ -14,10 +14,9 @@ The first run downloads and verifies the source files. Later runs reuse a source
 when its SHA-256 checksum matches the value recorded in the script. Both source downloads
 and prepared extracts remain under `data/raw/` and are ignored by Git.
 
-Run each notebook's setup cells before its analysis. They locate the project folder and
-set `data_dir`, so `pd.read_csv(data_dir / "hotels_course.csv")` works whether the kernel
-starts in the project root or inside the module folder. Running the preparation script
-in a terminal does not change the notebook kernel's working folder.
+Notebooks run from their own module folders and load data directly, for example:
+`pd.read_csv("../../data/raw/hotels_course.csv")`. The `../..` goes up two folders to
+the repository root. No path-search setup code is needed.
 
 ## Prepared files
 

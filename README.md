@@ -34,10 +34,11 @@ uv run python scripts/fetch_data.py
 uv run jupyter lab
 ```
 
-Open a module notebook in VS Code or JupyterLab and run its setup cells first. The setup
-finds the project folder and sets `data_dir`, so loading data works from either the project
-root or the notebook's own folder. A terminal and a notebook kernel can have different
-working folders.
+Open this repository folder in VS Code, select its `.venv` kernel, and open a module
+notebook (or use JupyterLab). Kernels use the notebook's own folder; the VS Code workspace
+setting makes this explicit. Data loading is a plain call such as
+`pd.read_csv("../../data/raw/hotels_course.csv")`: `../..` goes up two folders to the
+repository root. Restart an existing kernel after changing its working-folder setting.
 
 ## CEU AI in the VS Code terminal
 
@@ -156,13 +157,9 @@ uv run python scripts/execute_notebooks.py
 uv run python scripts/test_ceu.py
 ```
 
-The execution check starts each fresh kernel in the notebook's own folder, matching a
-normal notebook launch, without changing the committed files. To also check execution
-from the project root:
-
-```bash
-uv run python scripts/execute_notebooks.py --working-directory project
-```
+Run these commands from the repository root. The execution check starts each fresh kernel
+in the notebook's own folder, matching VS Code and JupyterLab, without changing the
+committed files.
 
 ## Attribution and licensing
 
