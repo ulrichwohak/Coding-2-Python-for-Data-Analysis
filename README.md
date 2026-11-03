@@ -150,7 +150,9 @@ Keep secrets in `.ceu/` or another excluded location, not in ordinary course fil
 filename checks cannot identify every kind of confidential content.
 
 Use `/context` to preview the automatic course guide and dataset catalogue without sending
-them to CEU, and `/tree` to inspect project paths. The tree is limited to 400 entries. Each prompt
+them to CEU, and `/tree` to inspect project paths. The tree preview is limited to 400 entries;
+a file outside that preview can still be read when you give its full project-relative path.
+All normal file protections still apply. Each prompt
 allows at most three rounds of file inspection, with up to four files per round, followed
 by a final response (at most four model calls, including any source correction). File
 inspection and correction can therefore consume more tokens than a single request.
@@ -206,10 +208,23 @@ shares CEU's configured request and spending limits.
 
 ### Using CEU AI with a debugging homework
 
-Fork the assigned homework repository on GitHub, then clone **your fork inside this
-course folder**. Keep its `coding2-debug-...` name, use a folder such as `homework-01/`,
-or place it under `homeworks/`. These locations are ignored by the course repository's
-Git rules but remain readable by the CEU assistant. The homework keeps its own Git history.
+Fork the assigned homework repository on GitHub, then clone **your fork anywhere inside
+this course folder**, using any ordinary folder name and nesting depth. For example,
+`coding2-debug-12-simple-linear-regression/`, `Homework 1/`, and
+`My work/November/Homework 1/` all work. Spaces are allowed. Hidden, credential, private,
+environment, and protected raw-data locations remain off limits; do not clone there or
+use a symbolic link. The homework keeps its own Git history.
+
+When the CEU app starts, and before each request, it detects nested repositories by their
+`.git` marker and adds their exact locations to the parent repository's **local Git
+exclude file** (`.git/info/exclude`). This prevents ordinary parent-repository `git add`
+from including those untracked clones, regardless of their names. It reports updates,
+preserves your other local exclude rules, and refreshes its own entries when folders move.
+It does not edit the shared `.gitignore`, stage files, commit, or push. Already tracked or
+staged files are not removed; undo any accidental staging yourself. Git metadata is not
+sent to the model. This automatic protection requires a regular course clone with its
+own `.git` directory; for a linked Git worktree it warns rather than changing external
+metadata. See [Git's local exclude documentation](https://git-scm.com/docs/gitignore).
 
 Run `uv sync` from the homework folder and select that homework's `.venv` as its notebook
 kernel in VS Code. Start the assistant from a terminal in the **parent course folder**:

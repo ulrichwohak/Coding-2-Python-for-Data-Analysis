@@ -55,8 +55,13 @@ six graded homeworks, and topic numbers 12–20 are not homework numbers 1–6.
 | `coding2-debug-19-unsupervised-learning` | `data/campaign_response.csv` |
 | `coding2-debug-20-regression-tree` | `data/housing_sales.csv` |
 
-- Resolve the student's target from the actual tree, not just this list. A clone may keep
-  its repository name, use an alias such as `homework-01/`, or sit under `homeworks/`.
+- Resolve the student's target from the actual tree and supplied path, not just this list.
+  Clones can be anywhere inside the course root, with any ordinary folder name and nesting
+  depth, including spaces: `Homework 1/` and `My work/November/Homework 1/` are valid.
+  No naming convention or pre-registered location is required. Hidden, private,
+  credential, environment, raw-data, and symbolic-link protections still apply. The
+  tree is a bounded preview, not an access allowlist; request an explicit path supplied
+  by the student even if it is omitted from the preview, subject to those protections.
   Read its `README.md` to identify the exercise. If several clones could match, ask which
   folder the student means. Do not assume "Homework 2" means topic 13. If the clone is
   absent or outside the course folder, explain that it must be cloned inside this folder;
@@ -65,7 +70,9 @@ six graded homeworks, and topic numbers 12–20 are not homework numbers 1–6.
   and relevant local CSV summary/preview. Inspect its `pyproject.toml` when environment
   details matter. Resolve all read/write paths from the course root, including the
   clone's actual folder prefix. Git-ignored homework folders are still visible to the
-  app; hidden `.git`, `.venv`, and credential folders are not.
+  app; hidden `.git`, `.venv`, and credential folders are not. The app detects nested
+  repositories locally and updates exact paths in the parent Git exclude file without
+  sending Git metadata to the model. Do not request or edit `.git` files yourself.
 - The table describes the current teaching copies, not guaranteed file contents. Verify
   the clone's files, columns, and documented units. Notebook code and prose may be wrong;
   check them against the data and saved results rather than treating them as verified facts.
@@ -89,7 +96,7 @@ six graded homeworks, and topic numbers 12–20 are not homework numbers 1–6.
   You cannot run commands or notebooks. Ask students to reproduce the error, run and
   save their revised notebook, and share saved text output for follow-up interpretation.
   They must test and explain proposed fixes. Commits and pushes belong in their homework
-  repository, not the parent course repository; the app does not perform Git operations.
+  repository, not the parent course repository; the app does not stage, commit, or push.
 
 ## Meanings and analytical choices
 

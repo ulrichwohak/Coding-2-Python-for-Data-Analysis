@@ -475,6 +475,89 @@ def project_snapshot(root: Path, excluded: set[str]) -> dict:
             "tree": entries, "truncated": truncated}
 
 
+def nested_repository_paths(root: Path) -> list[str]:
+    """Find independent repositories without reading their Git metadata or following links."""
+    repositories = []
+
+    def walk_error(error):
+        raise error
+
+    for folder, directories, _ in os.walk(root, topdown=True, followlinks=False, onerror=walk_error):
+        current = Path(folder)
+        marker = current / ".git"
+        if current != root and not marker.is_symlink() and (marker.is_dir() or marker.is_file()):
+            repositories.append(current.relative_to(root).as_posix())
+            directories[:] = []  # One exact exclusion also covers repositories inside this one.
+            continue
+        permitted = []
+        for name in sorted(directories):
+            relative = (current / name).relative_to(root).as_posix()
+            try:
+                local_path(root, relative, directory=True)
+            except (UserError, OSError):
+                continue
+            permitted.append(name)
+        directories[:] = permitted
+    return sorted(repositories)
+
+
+def sync_nested_git_excludes(root: Path, emit=print) -> None:
+    """Keep exact nested-repository paths out of the parent Git index, locally only."""
+    git_dir = root / ".git"
+    if not git_dir.exists() and not git_dir.is_symlink():
+        return  # A downloaded course folder has no parent Git repository to protect.
+    begin = "# BEGIN CEU AI nested repositories"
+    end = "# END CEU AI nested repositories"
+    try:
+        # Do not follow a symlink or a worktree gitfile to metadata outside this folder.
+        if git_dir.is_symlink() or not git_dir.is_dir():
+            raise UserError("Automatic Git protection requires a regular course clone with a .git folder.")
+        info = git_dir / "info"
+        target = info / "exclude"
+        if info.is_symlink() or target.is_symlink():
+            raise UserError("The local Git exclude path must not be a symbolic link.")
+        repositories = nested_repository_paths(root)
+        if target.exists() and target.stat().st_size > MAX_CONTEXT:
+            raise UserError("The local Git exclude file is too large to update automatically.")
+        old = target.read_bytes() if target.exists() else b""
+        lines = old.decode("utf-8").splitlines(keepends=True)
+        starts = [i for i, line in enumerate(lines) if line.rstrip("\r\n") == begin]
+        ends = [i for i, line in enumerate(lines) if line.rstrip("\r\n") == end]
+        if starts or ends:
+            if len(starts) != 1 or len(ends) != 1 or starts[0] >= ends[0]:
+                raise UserError("The CEU AI block in the local Git exclude file needs manual review.")
+            prefix, suffix = "".join(lines[:starts[0]]), "".join(lines[ends[0] + 1:])
+        else:
+            prefix, suffix = "".join(lines), ""
+        block = ""
+        if repositories:
+            # Escape Git glob characters so, for example, [A] names exactly that folder.
+            patterns = ["/" + re.sub(r"([\\*?\[\]])", r"\\\1", name) + "/" for name in repositories]
+            block = begin + "\n" + "\n".join(patterns) + "\n" + end + "\n"
+            if prefix and not prefix.endswith("\n"):
+                prefix += "\n"
+        updated = (prefix + block + suffix).encode("utf-8")
+        if updated == old:
+            return
+        info.mkdir(exist_ok=True)
+        temporary = None
+        try:
+            with tempfile.NamedTemporaryFile(dir=info, prefix="ceu-exclude-", delete=False) as handle:
+                temporary = Path(handle.name)
+                handle.write(updated)
+            if info.is_symlink() or target.is_symlink() or (target.read_bytes() if target.exists() else b"") != old:
+                raise UserError("The local Git exclude file changed during the update; try again.")
+            temporary.replace(target)
+        finally:
+            if temporary is not None and temporary.exists():
+                temporary.unlink()
+        emit("Updated local Git exclusions for nested repositories: "
+             + (", ".join(display(name) for name in repositories) or "none remaining"))
+    except (UserError, OSError, UnicodeError) as exc:
+        detail = str(exc) if isinstance(exc, UserError) else "The local Git exclude file could not be updated."
+        emit("Git protection warning: " + detail + " Avoid adding homework folders to the parent repository.")
+
+
 def course_context(root: Path, excluded: set[str]) -> dict:
     """Read the small course guide and fresh schemas for the five approved extracts."""
     guide = {"path": HARNESS_FILE, "status": "excluded"}
@@ -514,7 +597,6 @@ def generate_with_project(client: CEUClient, root: Path, prompt: str, shared: se
     if contains_credentials(context, (client.config.client_id, client.config.secret)):
         raise UserError("A shared file contains saved CEU credentials and cannot be sent.")
     project = project_snapshot(root, excluded)
-    available = {name for name in project["tree"] if not name.endswith("/")}
     course = course_context(root, excluded)
     if course["guide"]["status"] == "missing":
         emit("Course guide missing: restore harness.md for automatic course conventions.")
@@ -583,8 +665,8 @@ def generate_with_project(client: CEUClient, root: Path, prompt: str, shared: se
                 error = str(exc) if isinstance(exc, UserError) else "This file path is unavailable."
                 errors.append({"path": name, "error": error})
                 continue
-            if name not in available or excluded_path(name, excluded):
-                errors.append({"path": name, "error": "This path is unavailable or excluded. Choose a listed file."})
+            if excluded_path(name, excluded):
+                errors.append({"path": name, "error": "This path is excluded. Choose a different file."})
                 continue
             if name == HARNESS_FILE:
                 errors.append({"path": name, "error": "Already supplied in course.guide. Use that content."})
@@ -858,6 +940,7 @@ def run_chat(client: CEUClient, root: Path, ask) -> None:
     print("Ask naturally about existing files; the model can request relevant reads. /add is optional; read or created files stay in context.")
     print("CSV reads send summaries and previews only. Credentials, hidden files, and environment folders are excluded.")
     print("Use only data you are permitted to send to CEU. /context previews course context; /tree lists paths; /drop excludes a path.")
+    sync_nested_git_excludes(root)
     while True:
         try:
             prompt = ask("You> ").strip()
@@ -866,6 +949,7 @@ def run_chat(client: CEUClient, root: Path, ask) -> None:
             command, _, argument = prompt.partition(" ")
             if command in {"/quit", "/exit"}:
                 return
+            sync_nested_git_excludes(root)  # Also detect forks cloned or moved while the app is open.
             if command == "/help":
                 print("/context     Preview the automatic course guide and dataset catalogue\n/tree        Show the filtered project tree\n/add path    Share a file explicitly and undo its exclusion\n/drop path   Exclude a file or folder from future reads\n/new         Clear conversation and shared files; keep exclusions\n/quit        Exit")
                 print("Mention files anywhere in your request; no special wording is required. Paths may be relative or absolute within this project.")
@@ -882,7 +966,7 @@ def run_chat(client: CEUClient, root: Path, ask) -> None:
                 project = project_snapshot(root, excluded)
                 print(display("\n".join(project["tree"]) or "No eligible files or folders."))
                 if project["truncated"]:
-                    print("Tree truncated. Work in a smaller project folder or /add a specific file.")
+                    print("Tree truncated. Give the full project-relative path in your request or /add a specific file.")
                 continue
             if command == "/new":
                 history.clear(); shared.clear()

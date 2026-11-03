@@ -21,7 +21,8 @@ ceu-api-credentials.txt
 fr-invitation-token.txt
 lectures/lecture13-multiple-regression-workflow/test.ipynb
 
-# Student homework forks remain independent repositories; CEU AI can still read them.
+# Common clone names are ignored even before CEU AI starts. For arbitrary names,
+# the app maintains exact nested-repository paths in local .git/info/exclude.
 /coding2-debug-*/
 /homework-*/
 /homeworks/
