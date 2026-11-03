@@ -9,6 +9,7 @@ import io
 import json
 import os
 from pathlib import Path
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -1316,7 +1317,9 @@ class ProjectTests(unittest.TestCase):
                          {name: f"data/{data}" for name, data in expected.items()})
         # Mocks verify file handling and context delivery, not live model behaviour.
         for folder, data in [*expected.items(), ("homework-01", "career_outcomes.csv"),
-                             ("homeworks/my-fork", "housing_sales.csv")]:
+                             ("homeworks/my-fork", "housing_sales.csv"),
+                             ("Homework 1", "career_outcomes.csv"),
+                             ("My work/November/Homework 1", "career_outcomes.csv")]:
             with self.subTest(folder=folder):
                 readme = f"{folder}/README.md"
                 notebook = f"{folder}/analysis.ipynb"
@@ -1366,6 +1369,138 @@ class ProjectTests(unittest.TestCase):
                      "../outside/pyproject.toml", "homework-01/secrets/pyproject.toml"):
             with self.subTest(name=name), self.assertRaises(ceu.UserError):
                 ceu.local_path(self.root, name)
+
+    def test_named_homework_outside_tree_preview_is_read_without_relaxing_protections(self):
+        name = "My work/November/Homework 1/analysis.ipynb"
+        self.file(name, "NOTEBOOK_SENTINEL")
+        self.file(".ceu/config.json", "HIDDEN_SENTINEL")
+        self.file("README.md", "Course")
+        client = self.client([
+            {"message": "Inspect", "files": [], "read_files": [name, ".ceu/config.json"]},
+            {"message": "Explained", "files": []},
+        ])
+        with patch.object(ceu, "MAX_PROJECT_ENTRIES", 1):
+            _, context = ceu.generate_with_project(
+                client, self.root, f'Explain "{name}"', set(), [], set(), lambda _: None)
+        self.assertEqual(context, {name: "NOTEBOOK_SENTINEL"})
+        first, second = self.payloads(client)
+        self.assertTrue(first["project"]["truncated"])
+        self.assertNotIn(name, first["project"]["tree"])
+        self.assertIn(name, second["shared_files"])
+        self.assertNotIn("HIDDEN_SENTINEL", json.dumps(second))
+        self.assertTrue(second["inspection"]["read_errors"])
+
+
+class NestedGitTests(unittest.TestCase):
+    setUp = ProjectTests.setUp
+    file = ProjectTests.file
+
+    def git(self, *args, cwd=None):
+        return subprocess.run(["git", *args], cwd=cwd or self.root,
+                              capture_output=True, text=True, check=True)
+
+    def init_course(self):
+        self.git("init", "--quiet", "--initial-branch=main")
+
+    def nested(self, folder):
+        path = self.root / folder
+        path.mkdir(parents=True)
+        self.git("init", "--quiet", "--initial-branch=main", cwd=path)
+        self.file(f"{folder}/analysis.py", "x = 1\n")
+        return path
+
+    def is_ignored(self, name):
+        result = subprocess.run(["git", "check-ignore", "--quiet", "--", name], cwd=self.root)
+        self.assertIn(result.returncode, (0, 1))
+        return result.returncode == 0
+
+    def test_exact_nested_locations_are_ignored_but_readable_and_manual_rules_preserved(self):
+        self.init_course()
+        target = self.file(".git/info/exclude", "# My rules\nkeep-local.txt\n")
+        folders = ["Homework 1", "My work/November/Exercise", "Practice [A]"]
+        for folder in folders:
+            self.nested(folder)
+        self.file("My work/November/notes.md", "Do not hide me")
+        self.file("Practice A/notes.md", "Do not match the bracketed folder")
+        output = []
+        ceu.sync_nested_git_excludes(self.root, output.append)
+        self.assertEqual(len(output), 1)
+        self.assertTrue(target.read_text().startswith("# My rules\nkeep-local.txt\n"))
+        for folder in folders:
+            self.assertTrue(self.is_ignored(f"{folder}/analysis.py"))
+            self.assertIn(f"{folder}/analysis.py", ceu.project_snapshot(self.root, set())["tree"])
+            self.assertFalse(self.git("status", "--porcelain", "--untracked-files=all", "--", folder).stdout)
+        self.assertFalse(self.is_ignored("My work/November/notes.md"))
+        self.assertFalse(self.is_ignored("Practice A/notes.md"))
+        self.assertFalse((self.root / ".gitignore").exists())
+        self.assertFalse(list((self.root / ".git/info").glob("ceu-exclude-*")))
+        before = target.read_bytes()
+        ceu.sync_nested_git_excludes(self.root, output.append)
+        self.assertEqual(target.read_bytes(), before)
+        self.assertEqual(len(output), 1)
+
+    def test_moved_clone_replaces_managed_entry_and_does_not_unstage_existing_files(self):
+        self.init_course()
+        original = self.nested("First attempt")
+        self.file("notes.md", "Course notes")
+        self.git("add", "notes.md")
+        ceu.sync_nested_git_excludes(self.root, lambda _: None)
+        original.rename(self.root / "New location")
+        self.file("First attempt/notes.md", "This is now an ordinary folder")
+        ceu.sync_nested_git_excludes(self.root, lambda _: None)
+        self.assertFalse(self.is_ignored("First attempt/notes.md"))
+        self.assertTrue(self.is_ignored("New location/analysis.py"))
+        self.assertEqual(self.git("diff", "--cached", "--name-only").stdout.strip(), "notes.md")
+        self.assertFalse(list((self.root / ".git/info").glob("ceu-exclude-*")))
+
+    def test_nested_gitfiles_are_detected_without_reading_external_metadata(self):
+        self.init_course()
+        self.file("Deep/Homework/.git", "gitdir: /nonexistent/private/metadata\n")
+        self.file("Deep/Homework/analysis.py", "x = 1\n")
+        ceu.sync_nested_git_excludes(self.root, lambda _: None)
+        self.assertTrue(self.is_ignored("Deep/Homework/analysis.py"))
+
+    def test_symlinks_and_malformed_exclude_blocks_are_not_overwritten(self):
+        self.init_course()
+        self.nested("Homework 1")
+        target = self.file(".git/info/exclude", "# BEGIN CEU AI nested repositories\nunfinished\n")
+        before = target.read_bytes()
+        output = []
+        ceu.sync_nested_git_excludes(self.root, output.append)
+        self.assertEqual(target.read_bytes(), before)
+        self.assertIn("warning", output[-1])
+        with tempfile.TemporaryDirectory() as outside:
+            external = Path(outside) / "exclude"
+            external.write_text("EXTERNAL_SENTINEL")
+            target.unlink()
+            target.symlink_to(external)
+            ceu.sync_nested_git_excludes(self.root, output.append)
+            self.assertEqual(external.read_text(), "EXTERNAL_SENTINEL")
+            self.assertIn("symbolic link", output[-1])
+
+    def test_parent_gitfile_warns_without_following_it(self):
+        self.file(".git", "gitdir: /nonexistent/private/metadata\n")
+        output = []
+        ceu.sync_nested_git_excludes(self.root, output.append)
+        self.assertIn("regular course clone", output[-1])
+        self.assertEqual((self.root / ".git").read_text(), "gitdir: /nonexistent/private/metadata\n")
+
+    def test_chat_refreshes_git_exclusions_for_a_fork_created_while_waiting_for_input(self):
+        self.init_course()
+        inputs = iter(["/tree", "/quit"])
+
+        def ask(_):
+            value = next(inputs)
+            if value == "/tree":
+                self.nested("My work/Homework 1")
+            return value
+
+        client = ceu.CEUClient(ceu.Config("dummy-id", "dummy-secret"))
+        client.course_model = Mock(return_value=ceu.COURSE_MODEL)
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            ceu.run_chat(client, self.root, ask)
+        self.assertTrue(self.is_ignored("My work/Homework 1/analysis.py"))
+        self.assertIn("Updated local Git exclusions", output.getvalue())
 
 
 class ProtocolTests(unittest.TestCase):
