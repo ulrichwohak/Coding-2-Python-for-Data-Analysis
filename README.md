@@ -69,7 +69,7 @@ draw a scatterplot, and regress price on distance.
 
 The app automatically supplies:
 
-- [harness.md](harness.md): the teacher-editable lecture/data map, verified hotel variable
+- [harness.md](harness.md): the editable lecture/data map, verified hotel variable
   meanings, notebook layout, and the reconstruction exercise's coding-style policy;
 - a filtered folder tree;
 - a fresh catalogue of the five approved course extracts: availability, exact column
@@ -97,7 +97,8 @@ Before replacing or deleting a file, it saves the original under `.ceu/backups/`
 prints that backup folder. To recover it, copy the corresponding backup to its original
 location in VS Code. A fresh clone can restore published material, but not unpushed work.
 Deletion is limited to individual existing files, never directories. Credentials,
-hidden files, raw datasets, existing CSV datasets, the app, and the guide stay protected.
+hidden files, raw datasets, existing CSV datasets, the app, and the lockfile stay protected.
+The course guide can be edited as described below, but cannot be deleted or renamed by the app.
 It does not execute generated code. Inspect, run, test, and explain the result yourself.
 The model can return notebook cells as structured data; the app adds the standard Python
 notebook metadata and valid cell IDs before saving. Both standard notebook source
@@ -139,8 +140,25 @@ These are instructions to the model, not a language parser or a guarantee of per
 interpretation. Use `/drop path` when you want the app to block a file or folder from
 future reads regardless of the model's interpretation. Excluded paths remain excluded
 until explicitly re-enabled. Existing files cannot be replaced without first being read.
-Files read or created in the current chat remain available for follow-ups. The model
-cannot edit `harness.md`; the instructor can edit it directly in VS Code.
+Files read or created in the current chat remain available for follow-ups.
+
+Students can ask the assistant to edit their local `harness.md`, for example:
+
+```text
+Update harness.md: my first homework is in "My work/Homework 1".
+Add this location and leave the rest of the guide unchanged.
+```
+
+The guide is already supplied to the assistant, so `/add` is not needed unless you
+previously excluded it. The app automatically backs up the original, prints
+`Updated harness.md`, and uses the saved version on the **next prompt**, without a restart.
+It rejects an oversized guide or a replacement that would overwrite edits you made while
+the model was answering. Guide edits cannot remove the app's file protections. You can
+also edit the file directly in VS Code.
+
+These edits personalise the course copy on your computer, not the instructor's repository
+or your homework fork. Since `harness.md` is tracked in the course repository, a later
+`git pull` that changes the same file may require you to reconcile your local edits.
 
 The app can read `.py`, `.ipynb`, `.md`, `.txt`, `.csv`, and `pyproject.toml` files. Text
 files and total request context have size limits. Hidden files, environment folders,

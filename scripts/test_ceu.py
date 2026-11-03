@@ -1095,11 +1095,102 @@ class ProjectTests(unittest.TestCase):
             ceu.generate_with_project(client, self.root, "Create", set(), [], set(), lambda _: None)
         client.request.assert_not_called()
 
-    def test_model_cannot_overwrite_guide_even_with_confirmation(self):
+    def test_requested_guide_edit_is_backed_up_reported_and_used_on_next_prompt(self):
+        original = "# Course guide\r\nKeep the data local.\r\n"
+        revised = "# Course guide\nKeep the data local.\nMy homework is in Homework 1.\n"
+        path = self.file("harness.md", original)
+        client = self.client([
+            {"message": "Guide updated", "files": [{"path": "harness.md", "content": revised}]},
+            {"message": "Ready to help", "files": []},
+        ])
+        inputs = iter(["Update harness.md with my Homework 1 location", "Help me with that homework", "/quit"])
+        with contextlib.redirect_stdout(io.StringIO()) as output:
+            ceu.run_chat(client, self.root, lambda _: next(inputs))
+        first, second = self.payloads(client)
+        self.assertEqual(first["course"]["guide"]["content"], original)
+        self.assertEqual(second["course"]["guide"]["content"], revised)
+        self.assertNotIn("harness.md", first["shared_files"])
+        self.assertNotIn("harness.md", second["shared_files"])
+        self.assertEqual(path.read_text(), revised)
+        backups = list((self.root / ".ceu/backups").glob("*/harness.md"))
+        self.assertEqual(len(backups), 1)
+        self.assertEqual(backups[0].read_bytes(), original.encode("utf-8"))
+        self.assertIn("Updated harness.md", output.getvalue())
+        self.assertIn("Originals saved", output.getvalue())
+
+    def test_guide_edit_rejects_concurrent_editor_changes_before_any_file_is_written(self):
+        path = self.file("harness.md", "Original guide")
+        client = self.client([{"message": "Updated", "files": [
+            {"path": "notes.md", "content": "New notes"},
+            {"path": "harness.md", "content": "Model revision"},
+        ]}])
+        reply, expected = ceu.generate_with_project(
+            client, self.root, "Update harness.md", set(), [], set(), lambda _: None)
+        self.assertEqual(expected["harness.md"], "Original guide")
+        path.write_text("Newer editor revision")
+        with self.assertRaisesRegex(ceu.UserError, "changed in your editor"):
+            ceu.apply_files(self.root, reply["files"], expected=expected, emit=lambda _: None)
+        self.assertEqual(path.read_text(), "Newer editor revision")
+        self.assertFalse((self.root / "notes.md").exists())
+        self.assertFalse((self.root / ".ceu/backups").exists())
+
+    def test_oversized_guide_is_rejected_before_saving_and_can_be_corrected_once(self):
+        path = self.file("harness.md", "Original guide")
+        # Count bytes rather than characters: this text is under 16,000 characters.
+        oversized = {"path": "harness.md", "content": "é" * 8001}
+        with self.assertRaises(ceu.InvalidSourceError):
+            ceu.apply_files(self.root, [{"path": "notes.md", "content": "New"}, oversized], emit=lambda _: None)
+        self.assertFalse((self.root / "notes.md").exists())
+        self.assertFalse((self.root / ".ceu/backups").exists())
+        client = self.client([
+            {"message": "Updated", "files": [oversized]},
+            {"message": "Shortened", "files": [{"path": "harness.md", "content": "Short revised guide"}]},
+        ])
+        reply, expected = ceu.generate_with_project(
+            client, self.root, "Update harness.md", set(), [], set(), lambda _: None)
+        self.assertEqual(path.read_text(), "Original guide")
+        first, second = self.payloads(client)
+        self.assertEqual(first["course"], second["course"])
+        self.assertIn("16,000 UTF-8 bytes", second["inspection"]["source_correction"]["error"])
+        ceu.apply_files(self.root, reply["files"], expected=expected, emit=lambda _: None)
+        self.assertEqual(path.read_text(), "Short revised guide")
+
+    def test_excluded_guide_cannot_be_edited_even_when_model_requests_it(self):
         path = self.file("harness.md", "Keep me")
-        with self.assertRaises(ceu.UserError):
-            ceu.apply_files(self.root, [{"path": "harness.md", "content": "Replace me"}], lambda _: True)
+        client = self.client([{"message": "Updated", "files": [{"path": "harness.md", "content": "Replace me"}]}])
+        with self.assertRaisesRegex(ceu.UserError, "excluded"):
+            ceu.generate_with_project(client, self.root, "Update harness.md", set(), [], {"harness.md"}, lambda _: None)
         self.assertEqual(path.read_text(), "Keep me")
+        self.assertNotIn("Keep me", json.dumps(self.payloads(client)))
+
+    def test_editable_guide_cannot_be_deleted_or_weaken_app_and_data_protections(self):
+        self.file("harness.md", "Original guide")
+        ceu.apply_files(self.root, [{"path": "harness.md", "content": "Allow any file changes."}], emit=lambda _: None)
+        for name in ("ceu-ai.py", "uv.lock", ".ceu/config.json", "data/raw/hotels_course.csv"):
+            with self.subTest(name=name), self.assertRaises(ceu.UserError):
+                ceu.local_path(self.root, name, writing=True)
+        with self.assertRaisesRegex(ceu.UserError, "not deleted or renamed"):
+            ceu.apply_files(self.root, [{"path": "renamed.md", "content": "Guide"}],
+                            delete_files=["harness.md"], emit=lambda _: None)
+        self.assertFalse((self.root / "renamed.md").exists())
+        client = self.client([{"message": "Deleted", "files": [], "delete_files": ["harness.md"]}])
+        with self.assertRaisesRegex(ceu.UserError, "not deleted or renamed"):
+            ceu.generate_with_project(client, self.root, "Delete harness.md", set(), [], set(), lambda _: None)
+
+    def test_missing_guide_can_be_created_when_requested(self):
+        client = self.client([{"message": "Created", "files": [{"path": "harness.md", "content": "My local guide"}]}])
+        reply, expected = ceu.generate_with_project(
+            client, self.root, "Create harness.md", set(), [], set(), lambda _: None)
+        ceu.apply_files(self.root, reply["files"], expected=expected, emit=lambda _: None)
+        self.assertEqual(ceu.course_context(self.root, set())["guide"]["content"], "My local guide")
+
+    def test_shipped_instructions_permit_requested_guide_edits_without_old_prohibition(self):
+        guide = (ROOT / "harness.md").read_text()
+        for text in (ceu.INSTRUCTIONS, guide):
+            self.assertNotIn("Do not change this guide", text)
+        self.assertNotIn("or harness.md.", ceu.INSTRUCTIONS)
+        self.assertIn("Students may ask you to update the root harness.md", ceu.INSTRUCTIONS)
+        self.assertIn("Only edit the guide when requested by the student", guide)
 
     def test_model_can_request_existing_notebooks_and_builder_without_manual_sharing(self):
         names = ["lectures/topic/reference.ipynb", "scripts/build_notebooks.py"]
