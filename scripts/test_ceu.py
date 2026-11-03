@@ -1296,6 +1296,77 @@ class ProjectTests(unittest.TestCase):
             self.assertTrue((ROOT / folder).is_dir())
             self.assertIn(dataset, (ROOT / folder / "README.md").read_text())
 
+    def test_all_homework_topics_are_documented_and_accessible_as_nested_repositories(self):
+        guide = (ROOT / "harness.md").read_text()
+        self.assertLessEqual(len(guide.encode("utf-8")), ceu.MAX_HARNESS_BYTES)
+        self.file("harness.md", guide)
+        expected = {
+            "coding2-debug-12-simple-linear-regression": "career_outcomes.csv",
+            "coding2-debug-13-multiple-regression-workflow": "career_outcomes.csv",
+            "coding2-debug-14-categorical-variables-interactions": "career_outcomes.csv",
+            "coding2-debug-15-diagnostics-transformations": "housing_sales.csv",
+            "coding2-debug-16-logistic-regression": "campaign_response.csv",
+            "coding2-debug-17-validation-resampling": "housing_sales.csv",
+            "coding2-debug-18-regularization-pipelines": "housing_sales.csv",
+            "coding2-debug-19-unsupervised-learning": "campaign_response.csv",
+            "coding2-debug-20-regression-tree": "housing_sales.csv",
+        }
+        rows = [line for line in guide.splitlines() if line.startswith("| `coding2-debug-")]
+        self.assertEqual({row.split("`")[1]: row.split("`")[3] for row in rows},
+                         {name: f"data/{data}" for name, data in expected.items()})
+        # Mocks verify file handling and context delivery, not live model behaviour.
+        for folder, data in [*expected.items(), ("homework-01", "career_outcomes.csv"),
+                             ("homeworks/my-fork", "housing_sales.csv")]:
+            with self.subTest(folder=folder):
+                readme = f"{folder}/README.md"
+                notebook = f"{folder}/analysis.ipynb"
+                dataset = f"{folder}/data/{data}"
+                environment = f"{folder}/pyproject.toml"
+                hidden = [f"{folder}/.git/config", f"{folder}/.venv/private.py",
+                          f"{folder}/.ceu/config.json"]
+                self.file(readme, f"# Debug this analysis\nUse data/{data}.\n")
+                original = ceu.notebook_content({"cells": [{"cell_type": "code", "source": "x = 1"}]})
+                path = self.file(notebook, original)
+                csv = self.file(dataset, "predictor,outcome\n1,2\n2,4\n")
+                self.file(environment, '[project]\nname = "homework"\nversion = "0.1.0"\n')
+                for name in hidden:
+                    self.file(name, "HIDDEN_SENTINEL")
+                client = self.client([
+                    {"message": "Inspect the homework", "files": [],
+                     "read_files": [readme, notebook, dataset, environment]},
+                    {"message": "Updated notebook", "files": [{"path": notebook,
+                     "content": {"cells": [{"cell_type": "code", "source": "x = 2"}]}}]},
+                ])
+                reply, context = ceu.generate_with_project(
+                    client, self.root, f"Help me debug {notebook}", set(), [], set(), lambda _: None)
+                payloads = self.payloads(client)
+                self.assertEqual(len(payloads), 2)
+                for payload in payloads:
+                    self.assertEqual(payload["course"]["guide"]["content"], guide)
+                    self.assertIn(notebook, payload["project"]["tree"])
+                    self.assertIn(environment, payload["project"]["tree"])
+                    self.assertNotIn(dataset, [item["path"] for item in payload["course"]["datasets"]])
+                    self.assertFalse(any(name in payload["project"]["tree"] for name in hidden))
+                    self.assertNotIn("HIDDEN_SENTINEL", json.dumps(payload))
+                self.assertEqual(set(context), {readme, notebook, dataset, environment})
+                summary = json.loads(context[dataset])
+                self.assertEqual(summary["row_count"], 2)
+                self.assertEqual([col["name"] for col in summary["columns"]], ["predictor", "outcome"])
+                self.assertEqual(ceu.apply_files(self.root, reply["files"], expected=context,
+                                                emit=lambda _: None), [notebook])
+                self.assertEqual("".join(json.loads(path.read_text())["cells"][0]["source"]), "x = 2")
+                self.assertEqual(csv.read_text(), "predictor,outcome\n1,2\n2,4\n")
+                backups = list((self.root / ".ceu/backups").glob(f"*/{notebook}"))
+                self.assertEqual(len(backups), 1)
+                self.assertEqual(backups[0].read_text(), original)
+
+    def test_nested_environment_read_does_not_allow_arbitrary_toml_or_hidden_paths(self):
+        for name in ("homework-01/other.toml", "homework-01/uv.lock",
+                     "homework-01/.git/pyproject.toml", "homework-01/.venv/pyproject.toml",
+                     "../outside/pyproject.toml", "homework-01/secrets/pyproject.toml"):
+            with self.subTest(name=name), self.assertRaises(ceu.UserError):
+                ceu.local_path(self.root, name)
+
 
 class ProtocolTests(unittest.TestCase):
     def test_renamed_app_preserves_credentials_location_and_self_protection(self):
