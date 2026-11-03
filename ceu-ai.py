@@ -411,7 +411,7 @@ def local_path(root: Path, name: str, *, writing: bool = False, directory: bool 
     if writing and parts[-1].lower() in PROTECTED_NAMES:
         raise UserError("The assistant cannot overwrite its own program or protected configuration.")
     if (not writing and not directory and Path(name).suffix.lower() not in READABLE_SUFFIXES
-            and name != "pyproject.toml"):
+            and parts[-1] != "pyproject.toml"):
         raise UserError("Only Python, notebook, Markdown, text, CSV, and pyproject.toml files can be read.")
     path = root
     for part in parts:

@@ -204,6 +204,36 @@ credentials. The credentials file is not encrypted; anyone who can read it can r
 shared secret. Conversation history is kept only for the current session. The class account
 shares CEU's configured request and spending limits.
 
+### Using CEU AI with a debugging homework
+
+Fork the assigned homework repository on GitHub, then clone **your fork inside this
+course folder**. Keep its `coding2-debug-...` name, use a folder such as `homework-01/`,
+or place it under `homeworks/`. These locations are ignored by the course repository's
+Git rules but remain readable by the CEU assistant. The homework keeps its own Git history.
+
+Run `uv sync` from the homework folder and select that homework's `.venv` as its notebook
+kernel in VS Code. Start the assistant from a terminal in the **parent course folder**:
+
+```bash
+uv run ceu-ai.py
+```
+
+No second app installation or new CEU credentials are needed. Name the homework folder
+in your request, for example:
+
+```text
+Help me understand why coding2-debug-12-simple-linear-regression/analysis.ipynb fails.
+Inspect that homework's README, notebook, and local dataset. Explain the error before
+suggesting a change.
+```
+
+The guide covers all nine debugging repository topics, including renamed local clones.
+Only the released homework is due; the repository numbers are topic numbers, not deadlines.
+The assistant can request a summary of the homework's CSV; these datasets are not included
+in the automatic lecture-data catalogue. Run and save the notebook yourself to share
+actual results. Commit and push your answers **from the homework folder to your fork**,
+not from the parent course repository. Do not add the nested repository as a submodule.
+
 ## Repository materials
 
 - `lectures/`: nine substantive topic lectures, grouped into six meetings, plus the course introduction.
