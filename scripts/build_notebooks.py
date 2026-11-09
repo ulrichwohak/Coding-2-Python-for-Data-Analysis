@@ -469,15 +469,14 @@ def lecture13() -> list:
         ),
         code(
             """
-            vienna = complete_sample.copy()
-            print("Hotels in the estimation sample:", len(vienna))
+            print("Hotels in the estimation sample:", len(complete_sample))
             """
         ),
         code(
             """
             fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-            sns.scatterplot(data=vienna, x="rating", y="log_price", alpha=0.7, ax=axes[0])
-            sns.boxplot(data=vienna, x="stars", y="log_price", ax=axes[1])
+            sns.scatterplot(data=complete_sample, x="rating", y="log_price", alpha=0.7, ax=axes[0])
+            sns.boxplot(data=complete_sample, x="stars", y="log_price", ax=axes[1])
             axes[0].set(title="Ratings and log price", xlabel="Customer rating", ylabel="Log price")
             axes[1].set(title="Log price by stars", xlabel="Stars", ylabel="Log price")
             plt.tight_layout()
@@ -509,14 +508,14 @@ def lecture13() -> list:
 
             Use the plotted rating of 1.0 to retrieve the record, then compare its
             `hotel_id` with `single_review_hotels`. This lookup is for inspection;
-            it does not remove any observations from `vienna`.
+            it does not remove any observations from `complete_sample`.
             """
         ),
         code(
             """
             # The far-left plotted point has a customer rating of 1.0.
-            plot_case = vienna.loc[
-                vienna["rating"].eq(1),
+            plot_case = complete_sample.loc[
+                complete_sample["rating"].eq(1),
                 ["hotel_id", "price", "log_price", "distance_miles", "stars", "rating", "review_count"],
             ]
             plot_case.round(2)
@@ -552,18 +551,18 @@ def lecture13() -> list:
             constant. A half-star increment contributes half that log-price difference.
             This is a modeling assumption to discuss using the plot; the next lecture
             introduces separate coefficients for categories.
-            All three models use `vienna`. Setting `missing="raise"` makes an unexpected
+            All three models use `complete_sample`. Setting `missing="raise"` makes an unexpected
             missing value stop estimation rather than silently change the sample.
             """
         ),
         code(
             """
-            model_1 = smf.ols("log_price ~ distance_miles", data=vienna, missing="raise").fit(cov_type="HC3")
-            model_2 = smf.ols("log_price ~ distance_miles + rating", data=vienna, missing="raise").fit(cov_type="HC3")
+            model_1 = smf.ols("log_price ~ distance_miles", data=complete_sample, missing="raise").fit(cov_type="HC3")
+            model_2 = smf.ols("log_price ~ distance_miles + rating", data=complete_sample, missing="raise").fit(cov_type="HC3")
             model_3 = smf.ols(
-                "log_price ~ distance_miles + rating + stars", data=vienna, missing="raise"
+                "log_price ~ distance_miles + rating + stars", data=complete_sample, missing="raise"
             ).fit(cov_type="HC3")
-            assert model_1.nobs == model_2.nobs == model_3.nobs == len(vienna)
+            assert model_1.nobs == model_2.nobs == model_3.nobs == len(complete_sample)
             """
         ),
         md(
@@ -679,13 +678,13 @@ def lecture13() -> list:
         ),
         code(
             """
-            vienna["predicted_log_price"] = model_3.fittedvalues
-            vienna["residual_log_price"] = model_3.resid
+            complete_sample["predicted_log_price"] = model_3.fittedvalues
+            complete_sample["residual_log_price"] = model_3.resid
             """
         ),
         code(
             """
-            candidates = vienna.nsmallest(8, "residual_log_price")[
+            candidates = complete_sample.nsmallest(8, "residual_log_price")[
                 ["hotel_id", "log_price", "predicted_log_price", "residual_log_price",
                  "distance_miles", "stars", "rating"]
             ]
@@ -695,8 +694,8 @@ def lecture13() -> list:
         code(
             """
             fig, ax = plt.subplots(figsize=(7, 5))
-            sns.scatterplot(data=vienna, x="predicted_log_price", y="log_price", alpha=0.65, ax=ax)
-            limits = [vienna["log_price"].min(), vienna["log_price"].max()]
+            sns.scatterplot(data=complete_sample, x="predicted_log_price", y="log_price", alpha=0.65, ax=ax)
+            limits = [complete_sample["log_price"].min(), complete_sample["log_price"].max()]
             ax.plot(limits, limits, color="black", linestyle="--")
             ax.set(title="Observed versus predicted log prices",
                    xlabel="Predicted log price", ylabel="Observed log price")
