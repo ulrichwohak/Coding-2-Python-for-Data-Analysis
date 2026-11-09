@@ -1,3 +1,6 @@
 {
-    "jupyter.notebookFileRoot": "${fileDirname}"
+    "jupyter.notebookFileRoot": "${fileDirname}",
+    "chat.disableAIFeatures": true,
+    "editor.inlineSuggest.enabled": false,
+    "editor.suggest.preview": false
 }
