@@ -697,19 +697,7 @@ def lecture13() -> list:
         ),
         md(
             """
-            ## Session 2 reconstruction handoff
-
-            At the end of the meeting, open
-            `prompts/session02-specification-diagnostics-reconstruction.md`. Include the
-            starting extract, missingness checks, sample restrictions, log transformation,
-            common estimation sample, and graphical investigation of unusual observations
-            in your specification. Trace the single-review hotel from the summary-table
-            follow-up to the plotted point using its ID. Explain why observations were
-            retained or excluded, and keep predictions, intervals, and residual comparisons
-            in log-price units.
-            Audit the reconstruction against the steps actually completed in class.
-
-            ### Optional extension: external validity
+            ## Optional extension: external validity
 
             Fit the same formula separately in Amsterdam and Barcelona. Compare the
             distance coefficient and prediction error. A stable formula is not guaranteed
