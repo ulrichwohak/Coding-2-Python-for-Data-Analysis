@@ -274,11 +274,19 @@ def lecture13() -> list:
             **Case:** Which Vienna hotels appear inexpensive relative to their location and
             observable quality?
 
-            This extends the simple regression from Lecture 12. We inspect a less
-            processed extract, document the estimation sample, specify candidate
-            models, compare them, construct honest interpretations, and distinguish a
-            confidence interval for mean log price from a prediction interval for one
-            hotel's log price.
+            This extends the simple regression from Lecture 12. We will follow the
+            main steps of an empirical analysis:
+
+            - **Understand the data:** establish what one row represents and inspect variable types.
+            - **Check for duplicates:** examine repeated rows and hotel IDs before deciding whether they are errors.
+            - **Check for missing data:** count missing values and investigate which accommodation types lack ratings.
+            - **Summarise the variables:** inspect distributions, ranges, and the number of reviews behind customer ratings.
+            - **Define the estimation sample:** decide which observations to retain, document exclusions, and use the same sample across models.
+            - **Prepare variables:** construct log price as the outcome for the regressions.
+            - **Explore relationships visually:** use scatterplots and boxplots to investigate unusual observations before deciding whether to exclude them.
+            - **Estimate and compare models:** add rating and stars to the distance model; follow changes in coefficients and R-squared, and explain what is held constant.
+            - **Predict and express uncertainty:** distinguish a confidence interval for mean log price from a prediction interval for one hotel's log price.
+            - **Investigate residuals:** identify hotels priced below the model's predictions and discuss what we would need to know before calling them bargains.
 
             Adapted from Gábor Békés and Gábor Kézdi's advanced hotel-regression materials
             and Chapter 10 case study.
