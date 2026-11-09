@@ -274,9 +274,11 @@ def lecture13() -> list:
             **Case:** Which Vienna hotels appear inexpensive relative to their location and
             observable quality?
 
-            This extends the simple regression from Lecture 12. We specify candidate
+            This extends the simple regression from Lecture 12. We inspect a less
+            processed extract, document the estimation sample, specify candidate
             models, compare them, construct honest interpretations, and distinguish a
-            confidence interval for a mean from a prediction interval for one hotel.
+            confidence interval for mean log price from a prediction interval for one
+            hotel's log price.
 
             Adapted from Gábor Békés and Gábor Kézdi's advanced hotel-regression materials
             and Chapter 10 case study.
@@ -289,68 +291,328 @@ def lecture13() -> list:
             import pandas as pd
             import seaborn as sns
             import statsmodels.formula.api as smf
-            from sklearn.metrics import root_mean_squared_error
 
             sns.set_theme(style="whitegrid")
             """
         ),
+        md(
+            """
+            ## 0. Inspect the data and build the estimation sample
+
+            Each row is one accommodation offer in Vienna for a one-night weekday stay in November
+            2017. The preparation script has joined the price and feature tables and
+            selected this city and stay period. It has retained all accommodation
+            types, missing ratings, and unusual prices. It has not calculated log prices.
+
+            We will add a helper column to `offers` and create named samples as we work.
+            First check types, missing values, and identifiers. A numeric hotel ID is a label,
+            not a predictor. Repeated hotel IDs in the full source can refer to
+            different stays; investigate the observation unit before removing duplicates.
+            """
+        ),
         code(
             """
-            hotels = pd.read_csv("../../data/raw/hotels_course.csv")
-            vienna = hotels.query("city == 'Vienna' and accommodation == 'Hotel'").copy()
-            vienna[["price", "distance_miles", "rating", "stars", "review_count"]].describe().round(2)
+            offers = pd.read_csv("../../data/raw/hotels_vienna_preparation.csv")
+            offers.info()
+            """
+        ),
+        code(
+            """
+            print("Rows:", len(offers))
+            print("Exact duplicate rows:", offers.duplicated().sum())
+            print("Repeated hotel IDs:", offers["hotel_id"].duplicated().sum())
+            assert offers["hotel_id"].notna().all()
+            assert offers["hotel_id"].is_unique
+            offers.isna().sum().rename("missing")
+            """
+        ),
+        md(
+            """
+            A missing rating means we do not observe a rating; it does not mean zero.
+            Count missing ratings by accommodation type before deciding what to do.
+            Deleting incomplete observations can change which properties we study.
+
+            **Step 1: create a missing-rating indicator.** `.isna()` returns `True`
+            where a rating is missing and `False` where it is observed. Assign this
+            result to a new column in `offers`, then inspect it beside the rating.
+            """
+        ),
+        code(
+            """
+            offers["missing_rating"] = offers["rating"].isna()
+            offers[["rating", "missing_rating"]].head(10)
+            """
+        ),
+        md(
+            """
+            **Step 2: count offers and missing ratings within each accommodation type.**
+            `groupby` forms the groups; `agg` calculates the summaries. Each tuple
+            names the source column and the operation: `size` counts all rows, while
+            `sum` counts missing ratings because `True` contributes 1 and `False`
+            contributes 0. The result is a separate table with one row per type.
+            """
+        ),
+        code(
+            """
+            # Group rows by accommodation type; agg() summarizes each group.
+            # Each argument has the form: new_column=("source_column", "operation").
+            # The name before = labels a column in the resulting summary table.
+            missing_by_accommodation = offers.groupby("accommodation").agg(
+                # Create "offers": size counts all rows in each group.
+                offers=("hotel_id", "size"),
+                # Create "missing_ratings": sum counts True values (True=1, False=0).
+                missing_ratings=("missing_rating", "sum"),
+            )
+            # Show the summary: one row per accommodation type.
+            missing_by_accommodation
+            """
+        ),
+        md(
+            """
+            Our question concerns hotels across all star categories. Count how many
+            hotels could enter each model. Adding rating can change the
+            estimation sample as well as the specification. We will explicitly use
+            one common sample for the three model comparisons below.
+            """
+        ),
+        code(
+            """
+            hotel_sample = offers.loc[offers["accommodation"].eq("Hotel")].copy()
+            required = ["price", "distance_miles", "rating", "stars"]
+            pd.Series({
+                "Distance-only model": len(hotel_sample.dropna(subset=["price", "distance_miles"])),
+                "All candidate predictors": len(hotel_sample.dropna(subset=required)),
+            }, name="available_rows")
+            """
+        ),
+        md(
+            """
+            Keep hotels across all observed star categories. Inspect their distributions
+            and missingness before estimation; star category will enter the model as a
+            predictor rather than determine which hotels are eligible.
+
+            Read `count` to check completeness and the minimum and maximum to check
+            ranges. Also inspect the minimum of `review_count`: how many customer
+            reviews support the least-reviewed hotel's rating?
+            """
+        ),
+        code(
+            """
+            hotel_sample[required + ["review_count"]].describe().round(2)
+            """
+        ),
+        md(
+            """
+            ### Follow up on the minimum review count
+
+            The minimum `review_count` is 1. This count belongs to the **customer
+            rating**, not the star classification. A rating based on one recorded
+            review gives us little evidence about typical customer experience.
+
+            Inspect the hotel with one review and note its `hotel_id`, stars, and
+            customer rating. Keep this observation in the data. We will return to
+            the same ID when we investigate the scatterplot.
+            """
+        ),
+        code(
+            """
+            # Inspect the hotel whose customer rating is based on one recorded review.
+            single_review_hotels = hotel_sample.loc[
+                hotel_sample["review_count"].eq(1),
+                ["hotel_id", "stars", "rating", "review_count"],
+            ]
+            single_review_hotels
+            """
+        ),
+        md(
+            """
+            Use complete observations for the variables appearing in any candidate
+            model. `subset=required` makes that decision explicit; missing values in
+            unused columns need not exclude a row. Report exclusions even when the
+            count is zero. Here one hotel has a missing rating. Complete-case analysis
+            does not establish that the retained observations represent properties
+            with missing data.
+            """
+        ),
+        code(
+            """
+            complete_sample = hotel_sample.dropna(subset=required).copy()
+            print("Excluded for missing model variables:", len(hotel_sample) - len(complete_sample))
+            assert np.isfinite(complete_sample[required]).all().all()
+            assert complete_sample["price"].gt(0).all()
+            assert complete_sample["distance_miles"].ge(0).all()
+
+            # Create log price
+            complete_sample["log_price"] = np.log(complete_sample["price"])
+            """
+        ),
+        md(
+            """
+            ### Inspect unusual observations in the plots
+
+            Keep all complete hotel observations for the initial analysis. Plot log price
+            against ratings and star categories before making any outlier decision.
+            The log transformation compresses price differences;
+            it does not remove observations or establish that an unusual value is valid.
+
+            The currency discrepancy in the source documentation is recorded in
+            `data/README.md`; values here are used without conversion.
+            """
+        ),
+        code(
+            """
+            vienna = complete_sample.copy()
+            print("Hotels in the estimation sample:", len(vienna))
+            """
+        ),
+        code(
+            """
+            fig, axes = plt.subplots(1, 2, figsize=(12, 4))
+            sns.scatterplot(data=vienna, x="rating", y="log_price", alpha=0.7, ax=axes[0])
+            sns.boxplot(data=vienna, x="stars", y="log_price", ax=axes[1])
+            axes[0].set(title="Ratings and log price", xlabel="Customer rating", ylabel="Log price")
+            axes[1].set(title="Log price by stars", xlabel="Stars", ylabel="Log price")
+            plt.tight_layout()
+            plt.show()
+            """
+        ),
+        md(
+            """
+            Discuss the plots before estimating:
+
+            - Which points look unusual compared with hotels of similar rating or stars?
+            - What would you check in the source before correcting or excluding a value?
+
+            A point beyond a boxplot whisker is a flag for investigation, not proof of
+            a data error. A high price may reflect a genuine offer or characteristics
+            we do not observe. The supplied data gives us no verified correction or
+            exclusion reason, so the main models retain all 253 complete hotels.
+            If an investigation supports a later exclusion, document the reason and
+            compare the resulting estimates with this full-sample analysis.
+            """
+        ),
+        md(
+            """
+            ### Return to the review-count check
+
+            Find the unusually low-rated, expensive hotel at the far left of the
+            rating–log-price scatterplot. Read its rating from the horizontal axis.
+            Could this be the hotel we inspected after the summary table?
+
+            Use the plotted rating of 1.0 to retrieve the record, then compare its
+            `hotel_id` with `single_review_hotels`. This lookup is for inspection;
+            it does not remove any observations from `vienna`.
+            """
+        ),
+        code(
+            """
+            # The far-left plotted point has a customer rating of 1.0.
+            plot_case = vienna.loc[
+                vienna["rating"].eq(1),
+                ["hotel_id", "price", "log_price", "distance_miles", "stars", "rating", "review_count"],
+            ]
+            plot_case.round(2)
+            """
+        ),
+        md(
+            """
+            The IDs match: **hotel 22164** has five stars, a customer rating of 1.0,
+            one recorded review, and price 587. The plotted point is at
+            `(rating=1, log_price≈6.38)`; the lookup shows both price and log price.
+
+            The summary table alerted us to a rating supported by only one review;
+            the plot showed why that information matters for interpreting the
+            price–rating relationship. The rating may be a poor measure of typical
+            customer experience, even if it accurately records that review.
+            Neither the low review count nor the plotted position establishes a
+            recording error or justifies automatic deletion.
+
+            Other unusual points are visible too, including the higher-priced hotels
+            with ratings above 4. This example identifies one observation to investigate;
+            it is not a rule identifying every outlier. All 253 complete hotels remain
+            in the regression sample.
             """
         ),
         md(
             """
             ## 1. Translate the question into model specifications
 
-            Distance is the baseline. Rating and star category are observable quality
+            Distance is the baseline. Rating and number of stars are observable quality
             measures. We add them in stages so that every change has a substantive reason.
+            Enter `stars` as a numeric predictor: each additional star is assumed to
+            have the same association with log price, holding distance and rating
+            constant. A half-star increment contributes half that log-price difference.
+            This is a modeling assumption to discuss using the plot; the next lecture
+            introduces separate coefficients for categories.
+            All three models use `vienna`. Setting `missing="raise"` makes an unexpected
+            missing value stop estimation rather than silently change the sample.
             """
         ),
         code(
             """
-            fig, axes = plt.subplots(1, 2, figsize=(12, 4))
-            sns.scatterplot(data=vienna, x="rating", y="log_price", hue="stars", ax=axes[0])
-            sns.boxplot(data=vienna, x="stars", y="log_price", ax=axes[1])
-            axes[0].set(title="Ratings and log price")
-            axes[1].set(title="Log price by star category")
-            plt.tight_layout()
-            plt.show()
-            """
-        ),
-        code(
-            """
-            model_1 = smf.ols("log_price ~ distance_miles", data=vienna).fit(cov_type="HC3")
-            model_2 = smf.ols("log_price ~ distance_miles + rating", data=vienna).fit(cov_type="HC3")
+            model_1 = smf.ols("log_price ~ distance_miles", data=vienna, missing="raise").fit(cov_type="HC3")
+            model_2 = smf.ols("log_price ~ distance_miles + rating", data=vienna, missing="raise").fit(cov_type="HC3")
             model_3 = smf.ols(
-                "log_price ~ distance_miles + rating + C(stars)", data=vienna
+                "log_price ~ distance_miles + rating + stars", data=vienna, missing="raise"
             ).fit(cov_type="HC3")
-            """
-        ),
-        code(
-            """
-            def model_row(name, model):
-                rmse = root_mean_squared_error(vienna["log_price"], model.fittedvalues)
-                return {"model": name, "adj_r2": model.rsquared_adj, "aic": model.aic, "rmse_log": rmse}
-
-            comparison = pd.DataFrame(
-                [model_row("distance", model_1), model_row("+ rating", model_2), model_row("+ stars", model_3)]
-            )
-            comparison.round(3)
+            assert model_1.nobs == model_2.nobs == model_3.nobs == len(vienna)
             """
         ),
         md(
             """
-            Adjusted R-squared and AIC describe in-sample fit with different complexity
-            penalties. They are useful here, but they are not substitutes for honest
-            out-of-sample evaluation; that arrives in Lecture 17.
+            ### Follow the coefficients as controls enter
+
+            Put specifications in columns and coefficients in rows so we can read
+            each coefficient from left to right. The outcome is log price in every
+            column. All models include an intercept, omitted from this display.
+            The star coefficient describes one additional star; there is no reference
+            category because `stars` enters numerically.
+            A dash means that a variable is not included, not that its estimate is zero.
             """
         ),
         code(
             """
-            terms = ["distance_miles", "rating", "C(stars)[T.3.5]", "C(stars)[T.4.0]"]
+            terms = ["distance_miles", "rating", "stars"]
+            regression_table = pd.DataFrame({
+                "Distance": model_1.params,
+                "+ rating": model_2.params,
+                "+ stars": model_3.params,
+            }).reindex(terms)
+            regression_table = regression_table.rename(index={
+                "distance_miles": "Distance (per mile)",
+                "rating": "Rating (per point)",
+                "stars": "Stars (per additional star)",
+            })
+            regression_table.loc["R-squared"] = [model_1.rsquared, model_2.rsquared, model_3.rsquared]
+            regression_table.loc["Adjusted R-squared"] = [
+                model_1.rsquared_adj, model_2.rsquared_adj, model_3.rsquared_adj,
+            ]
+            regression_table.loc["Observations"] = [model_1.nobs, model_2.nobs, model_3.nobs]
+            regression_table.round(3).fillna("—")
+            """
+        ),
+        md(
+            """
+            Read the distance row first. Model 1 describes the price–distance association
+            without holding quality measures constant. Model 2 holds rating constant;
+            Model 3 also holds the number of stars constant. Does the distance coefficient
+            become more or less negative as those controls enter?
+
+            Next follow the rating row. How does its coefficient change when we also
+            hold stars constant? A coefficient change shows that the conditional
+            association depends on the included variables. It does not by itself
+            establish a causal effect or prove that the largest model is correct.
+
+            R-squared describes the share of sample variation in **log price** accounted
+            for by each model. On this common sample, adding predictors cannot lower
+            ordinary R-squared. Adjusted R-squared also accounts for the number of
+            predictors and can fall. Neither measures performance on new hotels;
+            out-of-sample evaluation arrives in Lecture 17. Check the observation row
+            before attributing a coefficient change to the added controls.
+            """
+        ),
+        code(
+            """
             estimates = pd.DataFrame(
                 {"estimate": model_3.params, "robust_se": model_3.bse}
             ).loc[terms]
@@ -359,13 +621,27 @@ def lecture13() -> list:
         ),
         code(
             """
+            # Optional: Exact percentage change
             distance_pct = 100 * (np.exp(model_3.params["distance_miles"]) - 1)
             rating_pct = 100 * (np.exp(model_3.params["rating"]) - 1)
+            stars_pct = 100 * (np.exp(model_3.params["stars"]) - 1)
             print(f"One additional mile is associated with {distance_pct:.1f}% different price.")
             print(f"One rating point is associated with {rating_pct:.1f}% different price.")
+            print(f"One additional star is associated with {stars_pct:.1f}% different price.")
             """
         ),
-        md("## 2. Predict one hotel and express uncertainty"),
+        md(
+            """
+            ## 2. Predict log price for one hotel and express uncertainty
+
+            Keep predictions and intervals on the same log-price scale as the model.
+            In the table below, `mean` is the predicted mean log price for hotels with
+            these features. `mean_ci_lower` and `mean_ci_upper` bound its 95% confidence
+            interval. `obs_ci_lower` and `obs_ci_upper` bound a 95% prediction interval
+            for one new hotel's log price. `mean_se` is the standard error of the
+            predicted mean log price.
+            """
+        ),
         code(
             """
             proposed_hotel = pd.DataFrame(
@@ -375,67 +651,79 @@ def lecture13() -> list:
             prediction_log.round(3)
             """
         ),
-        code(
+        md(
             """
-            smearing_factor = np.mean(np.exp(model_3.resid))
-            columns = ["mean", "mean_ci_lower", "mean_ci_upper", "obs_ci_lower", "obs_ci_upper"]
-            prediction_price = np.exp(prediction_log[columns]) * smearing_factor
-            prediction_price.round(0)
+            The confidence interval describes uncertainty about the expected log price
+            for hotels with these features. The prediction interval is wider because
+            an individual hotel's log price also varies around that mean. The individual
+            prediction interval uses a common residual variance across hotels.
             """
         ),
         md(
             """
-            The confidence interval describes uncertainty about the expected price for
-            hotels with these features. The prediction interval is wider because an
-            individual hotel's price also contains irreducible variation.
+            ## 3. Use residuals to find candidates—not conclusions
+
+            A residual is observed log price minus fitted log price. A negative
+            residual means the hotel is cheaper than the model predicts given its
+            distance, rating, and stars. Compare observed and fitted values in log
+            units throughout this section.
             """
         ),
-        md("## 3. Use residuals to find candidates—not conclusions"),
         code(
             """
             vienna["predicted_log_price"] = model_3.fittedvalues
             vienna["residual_log_price"] = model_3.resid
-            vienna["predicted_price"] = np.exp(model_3.fittedvalues) * smearing_factor
             """
         ),
         code(
             """
             candidates = vienna.nsmallest(8, "residual_log_price")[
-                ["hotel_id", "price", "predicted_price", "distance_miles", "stars", "rating"]
+                ["hotel_id", "log_price", "predicted_log_price", "residual_log_price",
+                 "distance_miles", "stars", "rating"]
             ]
-            candidates.round(1)
+            candidates.round(3)
             """
         ),
         code(
             """
             fig, ax = plt.subplots(figsize=(7, 5))
-            sns.scatterplot(data=vienna, x="predicted_price", y="price", alpha=0.65, ax=ax)
-            limits = [vienna["price"].min(), vienna["price"].max()]
+            sns.scatterplot(data=vienna, x="predicted_log_price", y="log_price", alpha=0.65, ax=ax)
+            limits = [vienna["log_price"].min(), vienna["log_price"].max()]
             ax.plot(limits, limits, color="black", linestyle="--")
-            ax.set(title="Observed versus predicted prices", xlabel="Predicted price", ylabel="Observed price")
+            ax.set(title="Observed versus predicted log prices",
+                   xlabel="Predicted log price", ylabel="Observed log price")
             plt.show()
             """
         ),
         md(
             """
-            ## Session 1 reconstruction handoff
+            ## Session 2 reconstruction handoff
 
-            Only after completing both regression notebooks, open
-            `prompts/session01-regression-reconstruction.md`. The class will specify the
-            analysis in plain language, ask an LLM to reconstruct it, and audit the result
-            against this human-built reference.
+            At the end of the meeting, open
+            `prompts/session02-specification-diagnostics-reconstruction.md`. Include the
+            starting extract, missingness checks, sample restrictions, log transformation,
+            common estimation sample, and graphical investigation of unusual observations
+            in your specification. Trace the single-review hotel from the summary-table
+            follow-up to the plotted point using its ID. Explain why observations were
+            retained or excluded, and keep predictions, intervals, and residual comparisons
+            in log-price units.
+            Audit the reconstruction against the steps actually completed in class.
 
             ### Optional extension: external validity
 
             Fit the same formula separately in Amsterdam and Barcelona. Compare the
             distance coefficient and prediction error. A stable formula is not guaranteed
-            to have stable coefficients in another market.
+            to have stable coefficients in another market. This extension uses the
+            prepared three-city extract; its preparation decisions are documented in
+            `data/README.md`. That extract contains only three- to four-star properties,
+            so these city comparisons concern a narrower population than the main analysis.
             """
         ),
         code(
             """
+            hotels = pd.read_csv("../../data/raw/hotels_course.csv")
             city_models = {
-                city: smf.ols("log_price ~ distance_miles + rating + C(stars)", data=group).fit()
+                city: smf.ols("log_price ~ distance_miles + rating + stars", data=group).fit()
                 for city, group in hotels.query("accommodation == 'Hotel'").groupby("city")
             }
             pd.DataFrame(

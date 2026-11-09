@@ -69,10 +69,10 @@ draw a scatterplot, and regress price on distance.
 
 The app automatically supplies:
 
-- [harness.md](harness.md): the editable lecture/data map, verified hotel variable
+- [harness.md](harness.md): the editable lecture/data map, documented hotel variable
   meanings, notebook layout, and the reconstruction exercise's coding-style policy;
 - a filtered folder tree;
-- a fresh catalogue of the five approved course extracts: availability, exact column
+- a fresh catalogue of the six approved course extracts: availability, exact column
   names, types inferred by pandas, and row counts, without row values.
 
 The guide and catalogue are rebuilt for each student prompt and included in every API
@@ -175,7 +175,7 @@ allows at most three rounds of file inspection, with up to four files per round,
 by a final response (at most four model calls, including any source correction). File
 inspection and correction can therefore consume more tokens than a single request.
 There is no shell, code execution, or web-browsing tool.
-The guide is limited to 16 KB, and the total request remains bounded. Only the five named
+The guide is limited to 16 KB, and the total request remains bounded. Only the six named
 course extracts are profiled automatically, not arbitrary CSVs in your folder.
 The app requires the working folder to be the course folder containing `ceu-ai.py`; it will
 not scan your home folder or a parent workspace by accident.

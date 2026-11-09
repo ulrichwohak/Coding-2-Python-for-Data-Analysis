@@ -15,7 +15,7 @@ cannot identify the intended destination or dataset. Make analytical choices you
 | Topic | Destination folder | Prepared dataset in `data/raw/` |
 | --- | --- | --- |
 | Simple linear regression | `lectures/lecture12-simple-linear-regression/` | `hotels_course.csv` |
-| Multiple regression and workflow | `lectures/lecture13-multiple-regression-workflow/` | `hotels_course.csv` |
+| Multiple regression and workflow | `lectures/lecture13-multiple-regression-workflow/` | `hotels_vienna_preparation.csv` |
 | Categorical variables and interactions | `lectures/lecture14-categorical-variables-interactions/` | `hotels_course.csv` |
 | Diagnostics and transformations | `lectures/lecture15-diagnostics-transformations/` | `hotels_course.csv` |
 | Logistic regression and classification | `lectures/lecture16-logistic-regression/` | `share_health_course.csv` |
@@ -24,9 +24,20 @@ cannot identify the intended destination or dataset. Make analytical choices you
 | PCA and clustering | `lectures/lecture19-unsupervised-learning/` | `wms_course.csv` |
 | Regression trees | `lectures/lecture20-regression-tree/` | `used_cars_course.csv` |
 
-These are course-ready extracts of Békés and Kézdi's textbook datasets. Preparation and
+These are teaching extracts of Békés and Kézdi's textbook datasets. Preparation and
 provenance are documented in `data/README.md` and `scripts/fetch_data.py`. Do not substitute
 the larger source downloads, synthetic data, or remote URLs for the prepared extracts.
+Lecture 13 deliberately starts from the less processed Vienna extract, which retains
+missing ratings and unusual prices and has no `log_price`. Use its preparation decisions
+and transformations as part of the reconstruction. Its human-built analysis includes
+all 253 complete hotels, with no price cutoff. Students inspect a log-price scatterplot
+and boxplot before estimation; unusual observations remain unless an investigation justifies
+an exclusion. Stars enter numerically, assuming a constant association with log price
+per additional star. Its optional three-city extension uses
+`hotels_course.csv`, whose sample is restricted to three- to four-star properties.
+Lecture 13's human-built analysis reports predictions, intervals, fitted values, and
+residual comparisons in log-price units. Its optional percentage-change calculation
+interprets coefficients; it does not convert predicted log prices into price levels.
 
 Use the fresh `course.datasets` catalogue for availability, exact column names, inferred
 types, and row counts. This is sufficient to write code using known columns. Request a
@@ -78,7 +89,7 @@ six graded homeworks, and topic numbers 12–20 are not homework numbers 1–6.
   check them against the data and saved results rather than treating them as verified facts.
 - Homework datasets are separate, included synthetic teaching data. The lecture-only
   restriction against substituting synthetic data does not apply to these supplied files.
-  `course.datasets` profiles only the five lecture extracts, not nested homework CSVs.
+  `course.datasets` profiles only the six lecture extracts, not nested homework CSVs.
   Request the homework CSV through `read_files` (or use it if already shared); its absence
   from the automatic catalogue does not mean it is missing. Do not replace it with hotel,
   SHARE, Airbnb, WMS, or used-car data, invent columns, or tell students to run the course
@@ -100,9 +111,16 @@ six graded homeworks, and topic numbers 12–20 are not homework numbers 1–6.
 
 ## Meanings and analytical choices
 
-For the hotels extract, `price` is the one-night offer price in USD and `distance_miles`
-is distance from the city centre in miles. `log_price` is already the natural logarithm
-of `price`. These meanings follow the course data documentation and preparation script.
+For both hotel extracts, `price` is the one-night offer price and `distance_miles`
+is distance from the city centre in miles. Currency labels conflict: existing course
+material says USD; the hotels-europe README says EUR.
+See `data/README.md`; no conversion is performed and the discrepancy is unresolved.
+Use neutral price labels unless the currency has been established for the pinned files.
+In `hotels_course.csv`, `log_price` is already the natural logarithm of `price`.
+In `hotels_vienna_preparation.csv`, students construct it after checking positive prices.
+`review_count` counts the reviews behind the customer `rating`; it does not describe
+the star classification. Lecture 13 traces the hotel with one recorded review from
+the descriptive-table follow-up to the rating–log-price plot by matching its `hotel_id`.
 Check that these columns still exist in the
 current catalogue. Do not infer other variables' units or coding from names alone.
 

@@ -136,6 +136,36 @@ def prepare_hotels(paths: dict[str, Path]) -> pd.DataFrame:
     return course.assign(log_price=np.log(course["price"])).sort_values("hotel_id")
 
 
+def prepare_vienna_hotels(paths: dict[str, Path]) -> pd.DataFrame:
+    """Retain observed missingness and unusual prices for the preparation lesson."""
+    prices = pd.read_csv(paths["hotels_price"])
+    features = pd.read_csv(paths["hotels_features"])
+    hotels = prices.merge(features, on="hotel_id", validate="many_to_one")
+    keep = (
+        hotels["city_actual"].eq("Vienna")
+        & hotels["year"].eq(2017)
+        & hotels["month"].eq(11)
+        & hotels["weekend"].eq(0)
+        & hotels["nnights"].eq(1)
+    )
+    columns = {
+        "hotel_id": "hotel_id",
+        "city_actual": "city",
+        "accommodation_type": "accommodation",
+        "price": "price",
+        "distance": "distance_miles",
+        "stars": "stars",
+        "rating": "rating",
+        "rating_reviewcount": "review_count",
+    }
+    return (
+        hotels.loc[keep, list(columns)]
+        .rename(columns=columns)
+        .sort_values("hotel_id")
+        .reset_index(drop=True)
+    )
+
+
 def prepare_share_health(path: Path) -> pd.DataFrame:
     share = pd.read_csv(path)
     columns = [
@@ -279,6 +309,7 @@ def main() -> None:
     paths = {name: download(source) for name, source in SOURCES.items()}
     print(f"ready {paths['word_vectors'].relative_to(ROOT)} (pretrained word vectors)")
     write_dataset("hotels_course.csv", prepare_hotels(paths))
+    write_dataset("hotels_vienna_preparation.csv", prepare_vienna_hotels(paths))
     write_dataset("share_health_course.csv", prepare_share_health(paths["share_health"]))
     write_dataset("airbnb_hackney_course.csv", prepare_airbnb(paths["airbnb_london"]))
     write_dataset("wms_course.csv", prepare_wms(paths["wms"]))

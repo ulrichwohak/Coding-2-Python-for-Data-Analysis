@@ -43,6 +43,7 @@ COURSE_DATASETS = (
     "data/raw/airbnb_hackney_course.csv",
     "data/raw/wms_course.csv",
     "data/raw/used_cars_course.csv",
+    "data/raw/hotels_vienna_preparation.csv",
 )
 READABLE_SUFFIXES = {".py", ".ipynb", ".md", ".txt", ".csv"}
 CONFIG_PATH = Path(__file__).resolve().parent / ".ceu" / "config.json"
@@ -571,7 +572,7 @@ def sync_nested_git_excludes(root: Path, emit=print) -> None:
 
 
 def course_context(root: Path, excluded: set[str]) -> dict:
-    """Read the small course guide and fresh schemas for the five approved extracts."""
+    """Read the small course guide and fresh schemas for the approved extracts."""
     guide = {"path": HARNESS_FILE, "status": "excluded"}
     if not excluded_path(HARNESS_FILE, excluded):
         path = local_path(root, HARNESS_FILE)
