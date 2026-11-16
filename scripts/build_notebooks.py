@@ -891,14 +891,6 @@ def lecture14() -> list:
             category_model.summary()
             """
         ),
-        code(
-            """
-            category_terms = category_model.params.index[category_model.params.index.str.startswith("C(")]
-            pd.DataFrame(
-                {"estimate": category_model.params[category_terms], "robust_se": category_model.bse[category_terms]}
-            ).round(3)
-            """
-        ),
         md(
             """
             What does each star coefficient compare with? How do the city coefficients
@@ -956,11 +948,30 @@ def lecture14() -> list:
             ].head(10).round(3)
             """
         ),
+        code(
+            """
+            # Residual = observed minus predicted; positive values mean underprediction.
+            hotels["residual_log_price"] = hotels["log_price"] - hotels["predicted_log_price"]
+
+            fig, ax = plt.subplots(figsize=(8, 4))
+            sns.scatterplot(
+                data=hotels, x="predicted_log_price", y="residual_log_price", alpha=0.6, ax=ax
+            )
+            # On the zero line, predicted and observed log prices are equal.
+            ax.axhline(0, color="black", linestyle="--", linewidth=1)
+            ax.set(title="Residuals versus predicted log price", xlabel="Predicted log price",
+                   ylabel="Residual (observed minus predicted log price)")
+            plt.tight_layout()
+            plt.show()
+            """
+        ),
         md(
             """
             - For which of the displayed properties does the model predict a higher or lower
               log price than we observe?
             - Why can two properties in the same city and star category have different predictions?
+            - Are residuals scattered around zero across predicted log prices, or do you see
+              a pattern or a change in their spread?
 
             These predictions are the model's **fitted values**, equivalent to
             `interaction_model.fittedvalues`. They describe the fit to the estimation sample;

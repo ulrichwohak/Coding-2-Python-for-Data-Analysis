@@ -26,7 +26,9 @@ in the final model, distance and rating associations remain common across cities
 A short prediction section applies the final model to the observed properties. It displays
 the first ten observed and predicted log prices alongside the predictors. Two questions ask
 where the model overpredicts or underpredicts, and why properties in the same city and star
-category can have different predictions. These are fitted values for the estimation sample,
+category can have different predictions. A residual plot shows observed minus predicted log
+price against predicted log price, with a zero line; a third question asks about patterns
+and changes in the spread. These are fitted values for the estimation sample,
 not an evaluation of prediction performance on new data.
 
 ## Materials
