@@ -1,8 +1,33 @@
 # Lecture 14: Categorical Variables and Interactions
 
-This 30-minute live-coding lecture uses hotel type, stars, and city to show how categorical
-variables create reference-group comparisons. Students then allow the price-distance slope
-to differ by accommodation type and communicate the interaction through predictions.
+This live-coding lecture builds a regression around three questions:
+
+1. How do prices differ across Amsterdam, Barcelona and Vienna?
+2. How do hotels and apartments differ in price, holding city constant?
+3. Do the 3.5-versus-3 and 4-versus-3 star comparisons differ across cities?
+
+All models use the same 821 offers in the prepared extract, which includes hotels and
+apartments with 3, 3.5 or 4 stars. The existing sample restrictions are documented in
+`data/README.md`; the notebook adds no city filter. Short boxplot cells introduce each
+question, and cross-tabulations show the number of observations in the category combinations.
+These initial plots show unadjusted comparisons.
+
+Start with city alone: the intercept and city coefficients reproduce mean log prices by city.
+Then add accommodation type and examine how the interpretation and city coefficients change.
+For the third question, add distance, rating and star categories with a common star pattern
+across cities. Finally, interact city with stars to allow that pattern to differ. The final
+specification omits accommodation type, so the last two models differ in both their controls
+and their interaction structure.
+
+Reference categories are explicitly Amsterdam, Apartment and 3 stars. Omitting their
+indicator columns does not remove their observations. All models use HC0 standard errors;
+in the final model, distance and rating associations remain common across cities.
+
+A short prediction section applies the final model to the observed properties. It displays
+the first ten observed and predicted log prices alongside the predictors. Two questions ask
+where the model overpredicts or underpredicts, and why properties in the same city and star
+category can have different predictions. These are fitted values for the estimation sample,
+not an evaluation of prediction performance on new data.
 
 ## Materials
 
@@ -12,6 +37,6 @@ to differ by accommodation type and communicate the interaction through predicti
 
 ## Learning outcomes
 
-Students should be able to identify a reference category, combine the main and interaction
-coefficients into group-specific slopes, and prefer a prediction table or plot when raw
-interaction terms are difficult to communicate. The session continues into Lecture 15.
+Students should be able to identify reference categories, distinguish city price levels from
+within-city star comparisons, combine main and interaction coefficients, and compare
+observed log prices with model predictions for the same properties.

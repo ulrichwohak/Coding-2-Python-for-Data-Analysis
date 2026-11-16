@@ -736,9 +736,20 @@ def lecture14() -> list:
             """
             # Lecture 14: Categorical Variables and Interactions
 
-            We continue with the European hotels case. Categorical coefficients always
-            compare groups to a reference category; interactions allow a slope to differ
-            across groups. Prediction tables and plots make both ideas easier to explain.
+            We build the regression step by step around three questions:
+
+            1. How do prices differ across cities?
+            2. How do hotels and apartments differ in price, holding city constant?
+            3. Does the price difference between star categories vary by city?
+
+            Each row in `hotels_course.csv` is one accommodation offer from the European
+            hotels data. This prepared extract includes hotels and apartments with 3,
+            3.5 or 4 stars in all three cities. We use all 821 observations.
+            Its preparation and price restriction are documented in `data/README.md`.
+
+            Inspect each comparison visually before estimating it. All models use the
+            same observations and HC0 standard errors. Keep prices and comparisons on
+            the log scale throughout.
             """
         ),
         code(
@@ -755,17 +766,128 @@ def lecture14() -> list:
         code(
             """
             hotels = pd.read_csv("../../data/raw/hotels_course.csv")
-            hotels.groupby(["city", "accommodation"]).size().unstack(fill_value=0)
+            hotels.groupby(["city", "accommodation"]).size()
             """
         ),
-        md("## 1. A categorical predictor is a set of comparisons"),
+        md(
+            """
+            ## 1. How do prices differ across cities?
+
+            Begin with city alone. Use **Amsterdam** as the reference category. The
+            intercept is Amsterdam's mean log price; the other city coefficients are
+            differences from that mean. No other characteristics are held constant yet.
+            Omitting Amsterdam's indicator does not remove its observations.
+            """
+        ),
         code(
             """
-            vienna = hotels.query("city == 'Vienna'").copy()
+            sns.boxplot(data=hotels, x="city", y="log_price")
+            plt.title("Log price across cities")
+            plt.show()
+            """
+        ),
+        code(
+            """
+            # Compare these means with the intercept and city coefficients below.
+            hotels.groupby("city")["log_price"].mean().round(3)
+            """
+        ),
+        code(
+            """
+            city_model = smf.ols(
+                "log_price ~ C(city, Treatment(reference='Amsterdam'))",
+                data=hotels, missing="raise",
+            ).fit(cov_type="HC0")
+            city_model.summary()
+            """
+        ),
+        md(
+            """
+            ## 2. How do hotels and apartments differ in price?
+
+            Keep city in the model and add accommodation type, using **Apartment** as
+            its reference. The Hotel coefficient is now the hotel-apartment log-price
+            difference holding city constant. This model assumes that difference is
+            the same in every city; distance, rating and stars are not controlled for yet.
+            """
+        ),
+        code(
+            """
+            # Count hotels and apartments separately in each city.
+            pd.crosstab(hotels["city"], hotels["accommodation"])
+            """
+        ),
+        code(
+            """
+            sns.boxplot(data=hotels, x="accommodation", y="log_price", hue="city")
+            plt.legend(title="City", bbox_to_anchor=(1.02, 1), loc="upper left")
+            plt.title("Log price by accommodation type and city")
+            plt.show()
+            """
+        ),
+        code(
+            """
+            accommodation_model = smf.ols(
+                "log_price ~ C(city, Treatment(reference='Amsterdam'))"
+                " + C(accommodation, Treatment(reference='Apartment'))",
+                data=hotels, missing="raise",
+            ).fit(cov_type="HC0")
+            accommodation_model.summary()
+            """
+        ),
+        md(
+            """
+            How do the city coefficients change when accommodation type enters? What
+            does the Hotel coefficient compare with?
+
+            ## 3. Do star-category comparisons differ across cities?
+
+            First inspect the star categories within each city. We will add distance,
+            customer rating and star categories to the model, then allow the star
+            comparisons to differ by city.
+            """
+        ),
+        code(
+            """
+            # Count properties in each combination of city and star category.
+            pd.crosstab(hotels["city"], hotels["stars"])
+            """
+        ),
+        code(
+            """
+            sns.boxplot(data=hotels, x="stars", y="log_price", hue="city")
+            plt.legend(title="City", bbox_to_anchor=(1.02, 1), loc="upper left")
+            plt.title("Log price by stars and city")
+            plt.show()
+            """
+        ),
+        md(
+            """
+            Which city-star groups have few observations? Does the pattern across stars
+            look similar in every city?
+
+            ### 3.1 Add the other characteristics, with a common star pattern
+
+            Use **3 stars**, **Amsterdam** and **Apartment** as the reference categories.
+            With an intercept, each categorical predictor leaves out one indicator
+            column; observations in that category remain in the sample.
+
+            This model allows cities to have different log-price levels but assumes
+            the 3.5-versus-3 and 4-versus-3 comparisons are the same across cities.
+            Distance and customer rating are the numeric predictors from the previous
+            lecture. Each star comparison holds these predictors, accommodation type
+            and city constant. `Treatment(reference=...)` names each reference explicitly.
+            """
+        ),
+        code(
+            """
             category_model = smf.ols(
-                "log_price ~ distance_miles + rating + C(stars) + C(accommodation)",
-                data=vienna,
-            ).fit(cov_type="HC3")
+                "log_price ~ distance_miles + rating"
+                " + C(stars, Treatment(reference=3))"
+                " + C(city, Treatment(reference='Amsterdam'))"
+                " + C(accommodation, Treatment(reference='Apartment'))",
+                data=hotels, missing="raise",
+            ).fit(cov_type="HC0")
             category_model.summary()
             """
         ),
@@ -779,97 +901,70 @@ def lecture14() -> list:
         ),
         md(
             """
-            Statsmodels uses the alphabetically first observed category as the reference
-            unless we specify another. The intercept therefore describes a particular
-            reference hotel, not an average hotel.
-            """
-        ),
-        code(
-            """
-            comparison_hotels = pd.DataFrame(
-                {
-                    "distance_miles": [2.0, 2.0],
-                    "rating": [4.0, 4.0],
-                    "stars": [4.0, 4.0],
-                    "accommodation": ["Apartment", "Hotel"],
-                }
-            )
-            comparison_hotels["predicted_price"] = np.exp(category_model.predict(comparison_hotels))
-            comparison_hotels.round(1)
-            """
-        ),
-        md("## 2. Interactions let the distance slope differ"),
-        code(
-            """
-            interaction_model = smf.ols(
-                "log_price ~ distance_miles * C(accommodation) + rating + C(stars)",
-                data=vienna,
-            ).fit(cov_type="HC3")
-            interaction_model.summary()
-            """
-        ),
-        code(
-            """
-            base_slope = interaction_model.params["distance_miles"]
-            difference = interaction_model.params["distance_miles:C(accommodation)[T.Hotel]"]
-            slopes = pd.Series(
-                {"Apartment": base_slope, "Hotel": base_slope + difference}, name="log-price slope"
-            )
-            slopes.round(3)
-            """
-        ),
-        code(
-            """
-            grid = pd.DataFrame(
-                {
-                    "distance_miles": np.tile(np.linspace(0.2, 7, 50), 2),
-                    "accommodation": np.repeat(["Apartment", "Hotel"], 50),
-                    "rating": 4.0,
-                    "stars": 4.0,
-                }
-            )
-            grid["predicted_price"] = np.exp(interaction_model.predict(grid))
-            """
-        ),
-        code(
-            """
-            fig, ax = plt.subplots(figsize=(8, 5))
-            sns.lineplot(data=grid, x="distance_miles", y="predicted_price", hue="accommodation", ax=ax)
-            ax.set(title="Interaction shown as different slopes", xlabel="Distance (miles)", ylabel="Predicted price")
-            plt.show()
-            """
-        ),
-        md("## 3. City effects and model comparison"),
-        code(
-            """
-            pooled = smf.ols(
-                "log_price ~ distance_miles + rating + C(stars) + C(accommodation) + C(city)",
-                data=hotels,
-            ).fit(cov_type="HC3")
-            pooled_interaction = smf.ols(
-                "log_price ~ distance_miles * C(city) + rating + C(stars) + C(accommodation)",
-                data=hotels,
-            ).fit(cov_type="HC3")
-            """
-        ),
-        code(
-            """
-            pd.DataFrame(
-                {
-                    "model": ["common distance slope", "city-specific slopes"],
-                    "adjusted_r2": [pooled.rsquared_adj, pooled_interaction.rsquared_adj],
-                    "aic": [pooled.aic, pooled_interaction.aic],
-                }
-            ).round(2)
+            What does each star coefficient compare with? How do the city coefficients
+            differ from the star coefficients?
+
+            The intercept refers to a 3-star apartment in Amsterdam when distance and
+            rating are zero. It is not an average price; zero is outside the observed
+            rating range.
             """
         ),
         md(
             """
-            **Interpretation checkpoint:** An interaction coefficient is a *difference in
-            slopes*. The clearest explanation usually combines the relevant coefficients
-            or shows predicted values, as we did above.
+            ### 3.2 Allow the star comparisons to differ by city
 
-            Continue to Lecture 15 before running the Session 2 reconstruction exercise.
+            `*` includes both categorical predictors and their interaction. The star
+            coefficients now describe comparisons within **Amsterdam**. A city-by-star
+            interaction is the difference between that city's star comparison and
+            Amsterdam's comparison; add the two coefficients to obtain the comparison
+            for Barcelona or Vienna.
+
+            The city coefficients now compare cities specifically at **3 stars**.
+            Distance and rating associations remain common across cities. Accommodation type
+            is not included in this model.
+            """
+        ),
+        code(
+            """
+            interaction_model = smf.ols(
+                "log_price ~ distance_miles + rating"
+                " + C(stars, Treatment(reference=3)) * C(city, Treatment(reference='Amsterdam'))",
+                data=hotels, missing="raise",
+            ).fit(cov_type="HC0")
+            interaction_model.summary()
+            """
+        ),
+        md(
+            """
+            ## 4. What log prices does the model predict for the observed properties?
+
+            Use each property's recorded city, stars, distance and rating to predict its log
+            price. Compare the predictions with the observed log prices.
+            """
+        ),
+        code(
+            """
+            # Use the fitted model to predict log price for each observed property.
+            hotels["predicted_log_price"] = interaction_model.predict(hotels)
+            """
+        ),
+        code(
+            """
+            # Display observed and predicted log prices alongside the model's predictors.
+            hotels[
+                ["city", "stars", "distance_miles", "rating", "log_price", "predicted_log_price"]
+            ].head(10).round(3)
+            """
+        ),
+        md(
+            """
+            - For which of the displayed properties does the model predict a higher or lower
+              log price than we observe?
+            - Why can two properties in the same city and star category have different predictions?
+
+            These predictions are the model's **fitted values**, equivalent to
+            `interaction_model.fittedvalues`. They describe the fit to the estimation sample;
+            they do not evaluate prediction performance on new data.
             """
         ),
     ]
