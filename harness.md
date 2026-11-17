@@ -58,7 +58,7 @@ six graded homeworks, and topic numbers 12–20 are not homework numbers 1–6.
 | --- | --- |
 | `coding2-debug-12-simple-linear-regression` | `data/career_outcomes.csv` |
 | `coding2-debug-13-multiple-regression-workflow` | `data/career_outcomes.csv` |
-| `coding2-debug-14-categorical-variables-interactions` | `data/career_outcomes.csv` |
+| `coding2-debug-14-categorical-variables-interactions` | `data/cps1985.csv` |
 | `coding2-debug-15-diagnostics-transformations` | `data/housing_sales.csv` |
 | `coding2-debug-16-logistic-regression` | `data/campaign_response.csv` |
 | `coding2-debug-17-validation-resampling` | `data/housing_sales.csv` |
@@ -87,8 +87,10 @@ six graded homeworks, and topic numbers 12–20 are not homework numbers 1–6.
 - The table describes the current teaching copies, not guaranteed file contents. Verify
   the clone's files, columns, and documented units. Notebook code and prose may be wrong;
   check them against the data and saved results rather than treating them as verified facts.
-- Homework datasets are separate, included synthetic teaching data. The lecture-only
-  restriction against substituting synthetic data does not apply to these supplied files.
+- Homework datasets are included with their separate repositories. Most are synthetic;
+  the categorical-variables homework uses the historical CPS1985 wage sample.
+  Read each homework's data documentation for provenance. The lecture-only restriction
+  against substituting synthetic data does not apply to supplied synthetic homework files.
   `course.datasets` profiles only the six lecture extracts, not nested homework CSVs.
   Request the homework CSV through `read_files` (or use it if already shared); its absence
   from the automatic catalogue does not mean it is missing. Do not replace it with hotel,

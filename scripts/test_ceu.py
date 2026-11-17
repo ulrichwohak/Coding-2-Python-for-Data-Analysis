@@ -1395,7 +1395,7 @@ class ProjectTests(unittest.TestCase):
         expected = {
             "coding2-debug-12-simple-linear-regression": "career_outcomes.csv",
             "coding2-debug-13-multiple-regression-workflow": "career_outcomes.csv",
-            "coding2-debug-14-categorical-variables-interactions": "career_outcomes.csv",
+            "coding2-debug-14-categorical-variables-interactions": "cps1985.csv",
             "coding2-debug-15-diagnostics-transformations": "housing_sales.csv",
             "coding2-debug-16-logistic-regression": "campaign_response.csv",
             "coding2-debug-17-validation-resampling": "housing_sales.csv",
